@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Add Product - Haul Mandi Admin</title>
 <meta name="robots" content="noindex, nofollow" />
-<style>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <style>
   body {
     font-family: -apple-system, Segoe UI, Roboto, sans-serif;
     max-width: 480px;
@@ -54,6 +55,12 @@
 </style>
 </head>
 <body>
+  <div id="login-gate" style="text-align:center; margin-top:80px;">
+  <h1>Admin Login Required</h1>
+  <button onclick="netlifyIdentity.open()">Log in to continue</button>
+</div>
+
+<div id="admin-content" style="display:none;">
   <h1>Add a new product</h1>
 
   <label>Backend URL (your Render URL, one-time setup)</label>
@@ -89,6 +96,18 @@
   </div>
 
   <script>
+    netlifyIdentity.on('init', user => {
+  if (user) {
+    document.getElementById('login-gate').style.display = 'none';
+    document.getElementById('admin-content').style.display = 'block';
+  }
+});
+netlifyIdentity.on('login', () => {
+  document.getElementById('login-gate').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'block';
+});
+netlifyIdentity.on('logout', () => location.reload());
+netlifyIdentity.init();
     // Remembers your backend URL in this browser so you don't retype it every time
     window.onload = () => {
       const saved = localStorage.getItem("hm_backend_url");
@@ -168,5 +187,6 @@
       }
     }
   </script>
+  </div>
 </body>
 </html>
