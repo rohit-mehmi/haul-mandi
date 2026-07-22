@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Add Product - Haul Mandi Admin</title>
+<meta name="robots" content="noindex, nofollow" />
+<style>
+  body {
+    font-family: -apple-system, Segoe UI, Roboto, sans-serif;
+    max-width: 480px;
+    margin: 40px auto;
+    padding: 0 16px;
+    background: #f7f7f8;
+    color: #222;
+  }
+  h1 { font-size: 20px; }
+  label { display: block; margin-top: 16px; font-weight: 600; font-size: 14px; }
+  input {
+    width: 100%;
+    padding: 10px;
+    margin-top: 6px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 15px;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 20px;
+    width: 100%;
+    padding: 12px;
+    background: #6b21a8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  button:disabled { opacity: 0.6; }
+  #result {
+    margin-top: 20px;
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    display: none;
+  }
+  #result.success { background: #dcfce7; color: #166534; display: block; }
+  #result.error { background: #fee2e2; color: #991b1b; display: block; }
+  #preview {
+    margin-top: 16px;
+    display: none;
+  }
+  #preview img { max-width: 100%; border-radius: 6px; }
+</style>
+</head>
+<body>
+  <h1>Add a new product</h1>
+
+  <label>Backend URL (your Render URL, one-time setup)</label>
+  <input id="backendUrl" placeholder="https://haul-mandi-backend.onrender.com" />
+
+  <label>Product ID (short, unique — e.g. saree-red-001)</label>
+  <input id="productId" placeholder="saree-red-001" />
+
+  <label>Meesho Affiliate Link (from your Creator Dashboard)</label>
+  <input id="affiliateUrl" placeholder="https://meesho.onelink.me/..." />
+
+  <button id="submitBtn" onclick="addProduct()">Add Product</button>
+
+  <div id="result"></div>
+  <div id="preview">
+    <img id="previewImg" src="" alt="" />
+    <p id="previewTitle"></p>
+    <p id="previewPrice"></p>
+  </div>
+
+  <script>
+    // Remembers your backend URL in this browser so you don't retype it every time
+    window.onload = () => {
+      const saved = localStorage.getItem("hm_backend_url");
+      if (saved) document.getElementById("backendUrl").value = saved;
+    };
+
+    async function addProduct() {
+      const backendUrl = document.getElementById("backendUrl").value.trim().replace(/\/$/, "");
+      const productId = document.getElementById("productId").value.trim();
+      const affiliateUrl = document.getElementById("affiliateUrl").value.trim();
+      const resultEl = document.getElementById("result");
+      const previewEl = document.getElementById("preview");
+      const btn = document.getElementById("submitBtn");
+
+      resultEl.style.display = "none";
+      previewEl.style.display = "none";
+
+      if (!backendUrl || !productId || !affiliateUrl) {
+        resultEl.className = "error";
+        resultEl.textContent = "Please fill in all three fields.";
+        resultEl.style.display = "block";
+        return;
+      }
+
+      localStorage.setItem("hm_backend_url", backendUrl);
+
+      btn.disabled = true;
+      btn.textContent = "Adding...";
+
+      try {
+        const res = await fetch(`${backendUrl}/api/links`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ product_id: productId, affiliate_url: affiliateUrl }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          throw new Error(data.error || "Something went wrong.");
+        }
+
+        resultEl.className = "success";
+        resultEl.textContent = "Product added successfully!";
+        resultEl.style.display = "block";
+
+        if (data.product) {
+          document.getElementById("previewImg").src = data.product.image_url || "";
+          document.getElementById("previewTitle").textContent = data.product.title || "";
+          document.getElementById("previewPrice").textContent = data.product.price || "";
+          previewEl.style.display = "block";
+        }
+
+        document.getElementById("productId").value = "";
+        document.getElementById("affiliateUrl").value = "";
+      } catch (err) {
+        resultEl.className = "error";
+        resultEl.textContent = "Error: " + err.message;
+        resultEl.style.display = "block";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Add Product";
+      }
+    }
+  </script>
+</body>
+</html>
