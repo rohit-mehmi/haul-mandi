@@ -1,1132 +1,160 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Haul&nbsp;Mandi — Today's Best Deals, Verified</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<meta name="google-site-verification" content="7j2Sy65eiSRx5JAgUpGwI0hcq7_GzrbUMIHSOj6X9Ec" />
+// Haul Mandi backend
+// - Redirects visitors from your site to your Meesho affiliate links
+// - Lets you add a new product by pasting its affiliate link
+//   (auto-fetches the title/image/price for previews)
 
-<link rel="icon" type="image/x-icon" href="/favicon.ico">
-<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
-<link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+const express = require("express");
+const cors = require("cors");
+const cheerio = require("cheerio");
+const { createClient } = require("@supabase/supabase-js");
 
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500;1,9..144,700&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --ink: #14171F;
-    --ink-soft: #1E2330;
-    --ink-softer: #2A3040;
-    --paper: #FBF4E7;
-    --paper-dim: #EFE6D3;
-    --saffron: #FF9F1C;
-    --saffron-dim: #E88E10;
-    --ticket-red: #D64545;
-    --banyan: #2F9E63;
-    --thread: #C9A15A;
-    --ink-text: #14171F;
-    --muted: #9AA1B4;
-    --line: rgba(255,255,255,0.09);
-  }
+const app = express();
+app.use(cors());
+app.use(express.json());
 
-  *{box-sizing:border-box; margin:0; padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    background:var(--ink);
-    color:var(--paper);
-    font-family:'Inter', sans-serif;
-    overflow-x:hidden;
-    -webkit-font-smoothing:antialiased;
-  }
-  a{color:inherit; text-decoration:none;}
-  img,svg{display:block; max-width:100%;}
-  button{font-family:inherit; cursor:pointer;}
-  .wrap{max-width:1240px; margin:0 auto; padding:0 28px;}
+// --- Supabase connection (uses environment variables set on Render) ---
+const supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SECRET_KEY
+);
 
-  ::selection{background:var(--saffron); color:var(--ink);}
+// --- Health check (so you can confirm the server is alive) ---
+app.get("/", (req, res) => {
+  res.send("Haul Mandi backend is running.");
+});
 
-  :focus-visible{outline:2px solid var(--saffron); outline-offset:3px;}
+// --- 1. REDIRECT: haulmandi.com/go/meesho/<product_id> -> affiliate link ---
+app.get("/go/meesho/:productId", async (req, res) => {
+  const { productId } = req.params;
 
-  /* ---------- utility type ---------- */
-  .eyebrow{
-    font-family:'Space Mono', monospace;
-    font-size:12.5px;
-    letter-spacing:0.18em;
-    text-transform:uppercase;
-    color:var(--saffron);
-    display:flex; align-items:center; gap:10px;
-  }
-  .eyebrow::before{
-    content:'';
-    width:18px; height:1px;
-    background:var(--saffron);
-    display:inline-block;
-  }
-  .display{
-    font-family:'Fraunces', serif;
-    font-weight:900;
-    line-height:0.98;
-    letter-spacing:-0.01em;
-  }
-  .display em{
-    font-style:italic;
-    font-weight:500;
-    color:var(--saffron);
+  const { data, error } = await supabase
+    .from("meesho_links")
+    .select("affiliate_url")
+    .eq("product_id", productId)
+    .single();
+
+  if (error || !data) {
+    return res.status(404).send("Link not found.");
   }
 
-  /* ---------- nav ---------- */
-  header{
-    position:sticky; top:0; z-index:100;
-    background:rgba(20,23,31,0.86);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);
-  }
-  .nav{
-    display:flex; align-items:center; justify-content:space-between;
-    padding:18px 28px;
-  }
-  .logo{
-    display:flex; align-items:center; gap:10px;
-    font-family:'Fraunces', serif; font-weight:900; font-size:22px;
-    color:var(--paper);
-  }
-  .logo .stamp{
-    width:34px; height:34px; border-radius:50%;
-    border:1.5px dashed var(--saffron);
-    display:flex; align-items:center; justify-content:center;
-    font-family:'Bebas Neue', sans-serif;
-    font-size:15px; color:var(--saffron);
-    transform:rotate(-8deg);
-    flex-shrink:0;
-  }
-  .logo .sub{
-    display:block; font-family:'Space Mono', monospace;
-    font-size:10px; letter-spacing:0.12em; color:var(--muted);
-    font-weight:400; margin-top:-2px;
-  }
-  nav.links{
-    display:flex; gap:34px; font-size:14.5px; font-weight:500; color:var(--muted);
-  }
-  nav.links a{transition:color .2s;}
-  nav.links a:hover{color:var(--paper);}
-  .nav-cta{
-    background:var(--saffron); color:var(--ink);
-    padding:10px 20px; border-radius:100px;
-    font-weight:600; font-size:14px;
-    border:none;
-    transition:transform .15s ease, background .2s;
-  }
-  .nav-cta:hover{background:#FFB347; transform:translateY(-1px);}
-  .burger{display:none; background:none; border:none; color:var(--paper);}
+  return res.redirect(302, data.affiliate_url);
+});
 
-  /* ---------- hero ---------- */
-  .hero{
-    position:relative;
-    padding:76px 0 60px;
-    background:
-      radial-gradient(ellipse 900px 500px at 15% 0%, rgba(255,159,28,0.14), transparent 60%),
-      radial-gradient(ellipse 700px 500px at 100% 20%, rgba(214,69,69,0.12), transparent 55%);
-  }
-  .hero-top{
-    display:grid;
-    grid-template-columns: 1.1fr 0.7fr;
-    gap:50px;
-    align-items:end;
-    margin-bottom:52px;
-  }
-  .hero h1{
-    font-size:clamp(40px, 5.6vw, 74px);
-    margin-top:18px;
-  }
-  .hero-sub{
-    font-size:16.5px; color:var(--muted); line-height:1.6;
-    max-width:420px;
-    padding-bottom:6px;
-  }
-  .hero-sub strong{color:var(--paper); font-weight:600;}
-
-  /* ---------- ticket slider ---------- */
-  .slider-region{position:relative;}
-  .slider-track{
-    display:flex;
-    gap:22px;
-    overflow-x:auto;
-    scroll-snap-type:x mandatory;
-    padding:6px 6px 26px;
-    scrollbar-width:none;
-  }
-  .slider-track::-webkit-scrollbar{display:none;}
-
-  .ticket{
-    position:relative;
-    flex:0 0 auto;
-    width:270px;
-    scroll-snap-align:start;
-    background:var(--paper);
-    color:var(--ink-text);
-    border-radius:14px;
-    padding:20px 18px 22px;
-    box-shadow:0 18px 40px -14px rgba(0,0,0,0.55);
-    transition:transform .25s ease, box-shadow .25s ease;
-  }
-  .ticket:hover{transform:translateY(-6px); box-shadow:0 26px 50px -14px rgba(0,0,0,0.6);}
-
-  /* hole punch */
-  .ticket::before{
-    content:'';
-    position:absolute; top:-8px; left:50%;
-    transform:translateX(-50%);
-    width:16px; height:16px;
-    background:var(--ink);
-    border-radius:50%;
-  }
-  .ticket-badge{
-    position:absolute; top:16px; right:-8px;
-    background:var(--ticket-red); color:var(--paper);
-    font-family:'Bebas Neue', sans-serif;
-    font-size:13px; letter-spacing:0.04em;
-    padding:5px 12px 5px 10px;
-    border-radius:3px 0 0 3px;
-    transform:rotate(2deg);
-  }
-  .ticket-badge::after{
-    content:'';
-    position:absolute; right:-7px; top:0;
-    border-style:solid;
-    border-width:0 7px 12.5px 0;
-    border-color:transparent transparent #9c2f2f transparent;
-  }
-  .ticket-icon{
-    width:100%; height:118px;
-    background:var(--paper-dim);
-    border-radius:9px;
-    display:flex; align-items:center; justify-content:center;
-    margin-bottom:16px;
-  }
-  .ticket-icon svg{width:56px; height:56px;}
-  .ticket-store{
-    font-family:'Space Mono', monospace;
-    font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase;
-    color:#8b8272;
-    margin-bottom:6px;
-  }
-  .ticket h3{
-    font-family:'Fraunces', serif;
-    font-weight:600;
-    font-size:18px;
-    margin-bottom:12px;
-    line-height:1.25;
-  }
-  .cut-line{
-    border-top:1.5px dashed #D8CBA9;
-    margin:0 -18px 14px;
-    position:relative;
-  }
-  .cut-line::before, .cut-line::after{
-    content:'';
-    position:absolute; top:-7px;
-    width:14px; height:14px;
-    background:var(--ink);
-    border-radius:50%;
-  }
-  .cut-line::before{left:-7px;}
-  .cut-line::after{right:-7px;}
-  .price-row{
-    display:flex; align-items:baseline; gap:9px; margin-bottom:14px;
-  }
-  .price-now{
-    font-family:'Bebas Neue', sans-serif;
-    font-size:29px; color:var(--ink-text);
-    letter-spacing:0.01em;
-  }
-  .price-was{
-    font-family:'Space Mono', monospace;
-    font-size:13px; color:#A69B85;
-    text-decoration:line-through;
-  }
-  .buy-btn{
-    display:block; width:100%;
-    background:var(--ink); color:var(--paper);
-    text-align:center;
-    padding:11px 0;
-    border-radius:8px;
-    font-weight:600; font-size:14px;
-    border:none;
-    transition:background .2s;
-  }
-  .buy-btn:hover{background:var(--banyan);}
-
-  .slider-controls{
-    display:flex; justify-content:space-between; align-items:center;
-    margin-top:6px;
-  }
-  .dots{display:flex; gap:7px;}
-  .dot{width:7px; height:7px; border-radius:50%; background:var(--ink-softer);}
-  .dot.active{background:var(--saffron); width:20px; border-radius:5px; transition:all .25s;}
-  .arrow-btns{display:flex; gap:10px;}
-  .arrow-btn{
-    width:42px; height:42px; border-radius:50%;
-    background:var(--ink-soft); border:1px solid var(--line);
-    color:var(--paper);
-    display:flex; align-items:center; justify-content:center;
-    transition:background .2s, transform .15s;
-  }
-  .arrow-btn:hover{background:var(--saffron); color:var(--ink); transform:scale(1.06);}
-
-  /* ---------- full-width hero banner ---------- */
-  .hero-banner{width:100%; position:relative;}
-  .banner-viewport{
-    position:relative; width:100%; overflow:hidden;
-    height:460px;
-  }
-  .banner-track{
-    display:flex; height:100%;
-    transition:transform .7s cubic-bezier(.65,0,.35,1);
-    will-change:transform;
-  }
-  .banner-slide{
-    flex:0 0 100%; height:100%;
-    display:flex; align-items:center; justify-content:space-between;
-    padding:0 8vw;
-    position:relative;
-  }
-  .slide-amazon{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(255,159,28,0.22), transparent 60%), var(--ink);}
-  .slide-flipkart{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(78,140,255,0.20), transparent 60%), var(--ink);}
-  .slide-meesho{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(214,69,150,0.20), transparent 60%), var(--ink);}
-  .slide-myntra{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(214,69,69,0.20), transparent 60%), var(--ink);}
-  .slide-alibaba{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(255,159,28,0.18), transparent 60%), var(--ink);}
-  .banner-copy{max-width:480px; position:relative; z-index:2;}
-  .banner-h{font-size:clamp(32px, 4.4vw, 52px); margin-top:14px;}
-  .banner-p{color:var(--muted); font-size:16px; line-height:1.6; margin:18px 0 26px; max-width:400px;}
-  .banner-cta{
-    display:inline-block; background:var(--saffron); color:var(--ink);
-    padding:13px 26px; border-radius:100px; font-weight:600; font-size:14.5px;
-    transition:background .2s, transform .15s;
-  }
-  .banner-cta:hover{background:#FFB347; transform:translateY(-1px);}
-  .banner-art{
-    position:relative; z-index:1;
-    width:220px; height:220px;
-    display:flex; align-items:center; justify-content:center;
-    flex-shrink:0;
-  }
-  .banner-art svg{width:100%; height:100%;}
-
-  .banner-arrow{
-    position:absolute; top:50%; transform:translateY(-50%);
-    width:46px; height:46px; border-radius:50%;
-    background:rgba(20,23,31,0.5); border:1px solid var(--line);
-    color:var(--paper); display:flex; align-items:center; justify-content:center;
-    z-index:3; transition:background .2s, transform .15s;
-    backdrop-filter:blur(4px);
-  }
-  .banner-arrow:hover{background:var(--saffron); color:var(--ink);}
-  .banner-arrow.left{left:24px;}
-  .banner-arrow.right{right:24px;}
-
-  .banner-dots{
-    position:absolute; bottom:22px; left:50%; transform:translateX(-50%);
-    display:flex; gap:8px; z-index:3;
-  }
-  .banner-dots .dot{
-    width:8px; height:8px; border-radius:50%;
-    background:rgba(251,244,231,0.35); cursor:pointer;
-  }
-  .banner-dots .dot.active{background:var(--saffron); width:22px; border-radius:5px; transition:all .25s;}
-
-  /* ---------- platform shelves ---------- */
-  .platform-shelves{padding:88px 0 10px;}
-  .shelf-note{
-    font-family:'Space Mono', monospace; font-size:12.5px; font-weight:400;
-    color:var(--muted); font-style:normal; margin-left:8px;
-  }
-
-  /* ---------- marquee ---------- */
-  .marquee-band{
-    border-top:1px solid var(--line);
-    border-bottom:1px solid var(--line);
-    background:var(--ink-soft);
-    padding:16px 0;
-    overflow:hidden;
-    white-space:nowrap;
-  }
-  .marquee-inner{
-    display:inline-flex;
-    animation:scroll-left 32s linear infinite;
-  }
-  @keyframes scroll-left{
-    from{transform:translateX(0);}
-    to{transform:translateX(-50%);}
-  }
-  .marquee-item{
-    font-family:'Space Mono', monospace;
-    font-size:13px; letter-spacing:0.06em;
-    color:var(--muted);
-    padding:0 28px;
-    display:flex; align-items:center; gap:10px;
-    text-transform:uppercase;
-  }
-  .marquee-item .dot-sep{color:var(--saffron);}
-
-  /* ---------- shelves ---------- */
-  .shelves{padding:88px 0 20px;}
-  .shelf{margin-bottom:70px;}
-  .shelf-head{
-    display:flex; justify-content:space-between; align-items:baseline;
-    margin-bottom:26px; gap:20px; flex-wrap:wrap;
-  }
-  .shelf-head h2{
-    font-family:'Fraunces', serif; font-weight:600; font-style:italic;
-    font-size:clamp(24px,3vw,32px); color:var(--paper);
-  }
-  .shelf-head .see-all{
-    font-size:13.5px; font-weight:600; color:var(--saffron);
-    border-bottom:1px solid var(--saffron); padding-bottom:2px;
-    white-space:nowrap;
-  }
-  .shelf-row{
-    display:flex; gap:20px; overflow-x:auto;
-    padding-bottom:10px; scrollbar-width:none;
-  }
-  .shelf-row::-webkit-scrollbar{display:none;}
-  .shelf-card{
-    flex:0 0 auto; width:200px;
-    background:var(--ink-soft);
-    border:1px solid var(--line);
-    border-radius:12px;
-    padding:16px;
-    transition:border-color .2s, transform .2s;
-  }
-  .shelf-card:hover{border-color:var(--saffron); transform:translateY(-4px);}
-  .shelf-icon{
-    width:100%; height:92px;
-    background:var(--ink-softer);
-    border-radius:8px;
-    display:flex; align-items:center; justify-content:center;
-    margin-bottom:14px;
-  }
-  .shelf-icon svg{width:42px; height:42px;}
-  .shelf-store{
-    font-family:'Space Mono', monospace; font-size:9.5px;
-    letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);
-    margin-bottom:5px;
-  }
-  .shelf-card h4{
-    font-size:14px; font-weight:600; color:var(--paper);
-    margin-bottom:10px; line-height:1.3; min-height:36px;
-  }
-  .shelf-price{
-    display:flex; align-items:baseline; gap:8px;
-  }
-  .shelf-price .now{
-    font-family:'Bebas Neue', sans-serif; font-size:20px; color:var(--saffron);
-  }
-  .shelf-price .was{
-    font-family:'Space Mono', monospace; font-size:11.5px; color:var(--muted);
-    text-decoration:line-through;
-  }
-  .shelf-off{
-    font-size:11px; color:var(--banyan); font-weight:600; margin-top:4px;
-  }
-
-  /* ---------- how it works ---------- */
-  .hunt{
-    padding:90px 0;
-    background:var(--ink-soft);
-    border-top:1px solid var(--line);
-    border-bottom:1px solid var(--line);
-  }
-  .hunt-head{max-width:560px; margin-bottom:60px;}
-  .hunt-head h2{font-size:clamp(30px,4vw,44px); margin-top:16px;}
-  .hunt-head p{color:var(--muted); margin-top:18px; font-size:16px; line-height:1.6;}
-  .hunt-steps{
-    display:grid; grid-template-columns:repeat(3,1fr); gap:0;
-    position:relative;
-  }
-  .hunt-step{
-    position:relative;
-    padding:0 30px 0 0;
-  }
-  .hunt-step:not(:last-child)::after{
-    content:'';
-    position:absolute; top:26px; right:0;
-    width:60%; height:1px;
-    background:repeating-linear-gradient(90deg, var(--thread) 0 8px, transparent 8px 16px);
-  }
-  .hunt-tag{
-    font-family:'Bebas Neue', sans-serif;
-    font-size:15px; color:var(--ink);
-    background:var(--saffron);
-    width:52px; height:52px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center;
-    margin-bottom:22px;
-  }
-  .hunt-step h3{
-    font-family:'Fraunces', serif; font-weight:600; font-size:21px;
-    margin-bottom:12px; color:var(--paper);
-  }
-  .hunt-step p{color:var(--muted); font-size:14.5px; line-height:1.6; max-width:280px;}
-
-  /* ---------- trust / disclosure ---------- */
-  .trust{padding:80px 0 0;}
-  .trust-strip{
-    display:flex; justify-content:space-between; align-items:center;
-    flex-wrap:wrap; gap:24px;
-    padding:36px 40px;
-    background:var(--paper);
-    color:var(--ink);
-    border-radius:18px;
-    margin-bottom:0;
-  }
-  .trust-strip .tlabel{
-    font-family:'Space Mono', monospace; font-size:11.5px;
-    letter-spacing:0.1em; text-transform:uppercase; color:#8b8272;
-  }
-  .platform-list{display:flex; gap:30px; flex-wrap:wrap;}
-  .platform-list span{
-    font-family:'Fraunces', serif; font-weight:600; font-size:17px;
-  }
-
-  /* ---------- newsletter ---------- */
-  .signup{
-    padding:90px 0;
-    text-align:center;
-  }
-  .signup h2{font-size:clamp(30px,4.4vw,50px); max-width:640px; margin:18px auto 0;}
-  .signup p{color:var(--muted); margin:18px auto 28px; max-width:460px; font-size:15.5px;}
-  .signup-form{
-    display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
-  }
-  .signup-form input{
-    background:var(--ink-soft); border:1px solid var(--line);
-    color:var(--paper); padding:14px 18px; border-radius:100px;
-    font-family:'Inter'; font-size:14.5px; width:300px; max-width:70vw;
-  }
-  .signup-form input::placeholder{color:var(--muted);}
-  .signup-form button{
-    background:var(--saffron); color:var(--ink); border:none;
-    padding:14px 28px; border-radius:100px; font-weight:600; font-size:14.5px;
-    transition:background .2s;
-  }
-  .signup-form button:hover{background:#FFB347;}
-
-  /* ---------- footer ---------- */
-  footer{
-    border-top:1px solid var(--line);
-    padding:50px 0 34px;
-  }
-  .foot-grid{
-    display:flex; justify-content:space-between; flex-wrap:wrap; gap:36px;
-    margin-bottom:36px;
-  }
-  .foot-brand p{color:var(--muted); font-size:13.5px; max-width:280px; margin-top:14px; line-height:1.6;}
-  .foot-cols{display:flex; gap:60px; flex-wrap:wrap;}
-  .foot-col h5{
-    font-family:'Space Mono', monospace; font-size:11px; letter-spacing:0.1em;
-    text-transform:uppercase; color:var(--muted); margin-bottom:16px;
-  }
-  .foot-col a{
-    display:block; font-size:14px; color:var(--paper); opacity:0.75;
-    margin-bottom:11px; transition:opacity .2s;
-  }
-  .foot-col a:hover{opacity:1; color:var(--saffron);}
-  .disclosure{
-    border-top:1px solid var(--line);
-    padding-top:24px;
-    font-size:12.5px; color:var(--muted); line-height:1.7;
-  }
-  .disclosure strong{color:var(--paper);}
-
-  /* ---------- responsive ---------- */
-  @media (max-width:860px){
-    nav.links, .nav-cta{display:none;}
-    .burger{display:block;}
-    .hero-top{grid-template-columns:1fr;}
-    .hunt-steps{grid-template-columns:1fr; gap:36px;}
-    .hunt-step:not(:last-child)::after{display:none;}
-    .trust-strip{flex-direction:column; align-items:flex-start;}
-    .banner-viewport{height:auto;}
-    .banner-slide{flex-direction:column; justify-content:center; text-align:center; padding:50px 6vw 40px; gap:26px;}
-    .banner-copy{max-width:100%;}
-    .banner-p{margin-left:auto; margin-right:auto;}
-    .banner-art{width:150px; height:150px;}
-    .banner-arrow{width:38px; height:38px;}
-    .banner-arrow.left{left:10px;}
-    .banner-arrow.right{right:10px;}
-  }
-</style>
-</head>
-<body>
-
-<header>
-  <div class="nav wrap">
-    <div class="logo">
-      <div class="stamp">HM</div>
-      <div>
-        Haul&nbsp;Mandi
-        <span class="sub">DEALS, VERIFIED DAILY</span>
-      </div>
-    </div>
-    <nav class="links">
-      <a href="#shelves">Today's Haul</a>
-      <a href="#hunt">How it works</a>
-      <a href="#trust">Where we look</a>
-    </nav>
-    <button class="nav-cta">Get Deal Alerts</button>
-    <button class="burger" aria-label="Menu">
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M3 6h18M3 12h18M3 18h18" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
-  </div>
-</header>
-
-<section class="hero-banner">
-  <div class="banner-viewport" id="bannerViewport">
-    <div class="banner-track" id="bannerTrack">
-
-      <div class="banner-slide slide-amazon">
-        <div class="banner-copy">
-          <div class="eyebrow">Amazon · Live now</div>
-          <h2 class="display banner-h">Electronics haul<br><em>up to 55% off</em></h2>
-          <p class="banner-p">Headphones, power banks, and kitchen gadgets — all checked against 90-day pricing.</p>
-          <a href="#amazon-picks" class="banner-cta">Shop Amazon deals</a>
-        </div>
-        <div class="banner-art">
-          <svg viewBox="0 0 200 200" fill="none"><rect x="40" y="60" width="120" height="90" rx="10" stroke="#FBF4E7" stroke-width="3"/><path x="60" d="M60 60v-14a40 40 0 0 1 80 0v14" stroke="#FBF4E7" stroke-width="3"/><circle cx="100" cy="105" r="14" fill="#FF9F1C"/><text x="100" y="111" font-family="Bebas Neue" font-size="14" fill="#14171F" text-anchor="middle">55%</text></svg>
-        </div>
-      </div>
-
-      <div class="banner-slide slide-flipkart">
-        <div class="banner-copy">
-          <div class="eyebrow">Flipkart · Live now</div>
-          <h2 class="display banner-h">Big Billion prices,<br><em>every single day</em></h2>
-          <p class="banner-p">Monitors, speakers, and appliances at their genuine seasonal lows.</p>
-          <a href="#flipkart-picks" class="banner-cta">Shop Flipkart deals</a>
-        </div>
-        <div class="banner-art">
-          <svg viewBox="0 0 200 200" fill="none"><rect x="55" y="35" width="90" height="130" rx="14" stroke="#FBF4E7" stroke-width="3"/><circle cx="100" cy="145" r="7" fill="#FBF4E7"/><rect x="72" y="55" width="46" height="26" rx="4" fill="#4E8CFF" opacity="0.85"/></svg>
-        </div>
-      </div>
-
-      <div class="banner-slide slide-meesho">
-        <div class="banner-copy">
-          <div class="eyebrow">Meesho · Live now</div>
-          <h2 class="display banner-h">Fashion &amp; home,<br><em>under ₹500</em></h2>
-          <p class="banner-p">Sarees, décor, and daily essentials — small prices, real quality checks.</p>
-          <a href="#meesho-picks" class="banner-cta">Shop Meesho deals</a>
-        </div>
-        <div class="banner-art">
-          <svg viewBox="0 0 200 200" fill="none"><path d="M60 150 L74 60 H126 L140 150 Z" stroke="#FBF4E7" stroke-width="3" stroke-linejoin="round"/><path d="M82 60a18 18 0 0 1 36 0" stroke="#FBF4E7" stroke-width="3"/></svg>
-        </div>
-      </div>
-
-      <div class="banner-slide slide-myntra">
-        <div class="banner-copy">
-          <div class="eyebrow">Myntra · Live now</div>
-          <h2 class="display banner-h">End of season,<br><em>final markdowns</em></h2>
-          <p class="banner-p">Sneakers, jackets, and watches — the last price drop before restock.</p>
-          <a href="#myntra-picks" class="banner-cta">Shop Myntra deals</a>
-        </div>
-        <div class="banner-art">
-          <svg viewBox="0 0 200 200" fill="none"><path d="M50 140 Q62 70 100 70 Q138 70 150 140" stroke="#FBF4E7" stroke-width="3" fill="none"/><ellipse cx="100" cy="145" rx="60" ry="12" stroke="#FBF4E7" stroke-width="3"/></svg>
-        </div>
-      </div>
-
-      <div class="banner-slide slide-alibaba">
-        <div class="banner-copy">
-          <div class="eyebrow">Alibaba · Live now</div>
-          <h2 class="display banner-h">Buying in bulk?<br><em>Wholesale rates</em></h2>
-          <p class="banner-p">Pack-of-many deals for resellers and anyone stocking up.</p>
-          <a href="#alibaba-picks" class="banner-cta">Shop Alibaba deals</a>
-        </div>
-        <div class="banner-art">
-          <svg viewBox="0 0 200 200" fill="none"><rect x="52" y="70" width="45" height="45" rx="5" stroke="#FBF4E7" stroke-width="3"/><rect x="103" y="70" width="45" height="45" rx="5" stroke="#FBF4E7" stroke-width="3" opacity="0.6"/><rect x="77" y="115" width="45" height="45" rx="5" stroke="#FBF4E7" stroke-width="3" opacity="0.8"/></svg>
-        </div>
-      </div>
-
-    </div>
-
-    <button class="banner-arrow left" id="bannerPrev" aria-label="Previous banner">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-    <button class="banner-arrow right" id="bannerNext" aria-label="Next banner">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </button>
-
-    <div class="banner-dots" id="bannerDots"></div>
-  </div>
-</section>
-
-<div class="marquee-band">
-  <div class="marquee-inner" id="marqueeInner">
-    <!-- duplicated via JS -->
-  </div>
-</div>
-
-<section class="platform-shelves wrap" id="platform-shelves">
-  <div class="eyebrow" style="margin-bottom:14px;">Shop by store</div>
-  <h2 class="display" style="font-size:clamp(28px,3.6vw,42px); margin-bottom:50px;">Pick a marketplace,<br><em>we've already sorted it.</em></h2>
-
-  <div class="shelf" id="amazon-picks">
-    <div class="shelf-head">
-      <h2>Amazon</h2>
-      <a href="#" class="see-all">All Amazon deals →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 22v10l7 4" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg></div>
-        <h4>Robot Vacuum Cleaner, App Control</h4>
-        <div class="shelf-price"><span class="now">₹8,999</span><span class="was">₹15,999</span></div>
-        <div class="shelf-off">44% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="22" width="28" height="24" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 22v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Electric Pressure Cooker, 5L</h4>
-        <div class="shelf-price"><span class="now">₹3,499</span><span class="was">₹5,999</span></div>
-        <div class="shelf-off">42% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 46V26a12 12 0 0 1 24 0v20" stroke="#FBF4E7" stroke-width="2.2"/><rect x="16" y="46" width="32" height="6" rx="2" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Anti-theft Laptop Backpack</h4>
-        <div class="shelf-price"><span class="now">₹899</span><span class="was">₹1,999</span></div>
-        <div class="shelf-off">55% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="26" width="24" height="16" rx="6" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="34" r="2.4" fill="#FBF4E7"/></svg></div>
-        <h4>Wireless Mouse, Silent Click</h4>
-        <div class="shelf-price"><span class="now">₹399</span><span class="was">₹799</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="shelf" id="flipkart-picks">
-    <div class="shelf-head">
-      <h2>Flipkart</h2>
-      <a href="#" class="see-all">All Flipkart deals →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="14" y="18" width="36" height="26" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 50h16" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg></div>
-        <h4>24" Gaming Monitor, 144Hz</h4>
-        <div class="shelf-price"><span class="now">₹9,499</span><span class="was">₹13,999</span></div>
-        <div class="shelf-off">32% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="22" y="16" width="20" height="32" rx="8" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="38" r="3" fill="#FBF4E7"/></svg></div>
-        <h4>Portable Bluetooth Speaker</h4>
-        <div class="shelf-price"><span class="now">₹1,299</span><span class="was">₹2,599</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
-        <h4>Men's Formal Shirts, Pack of 2</h4>
-        <div class="shelf-price"><span class="now">₹699</span><span class="was">₹1,499</span></div>
-        <div class="shelf-off">53% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="26" width="32" height="14" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="24" cy="33" r="2.4" fill="#FBF4E7"/><circle cx="32" cy="33" r="2.4" fill="#FBF4E7"/></svg></div>
-        <h4>Induction Cooktop, 1800W</h4>
-        <div class="shelf-price"><span class="now">₹1,599</span><span class="was">₹2,999</span></div>
-        <div class="shelf-off">47% off</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="shelf" id="meesho-picks">
-    <div class="shelf-head">
-      <h2>Meesho</h2>
-      <a href="#" class="see-all">All Meesho deals →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
-        <h4>Printed Cotton Saree</h4>
-        <div class="shelf-price"><span class="now">₹399</span><span class="was">₹999</span></div>
-        <div class="shelf-off">60% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 24h20l3 22H19z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/><circle cx="32" cy="20" r="4" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>Kids Frock Set, Pack of 2</h4>
-        <div class="shelf-price"><span class="now">₹299</span><span class="was">₹699</span></div>
-        <div class="shelf-off">57% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="24" r="8" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 40h16l-3 12h-10z" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Artificial Jewellery Set</h4>
-        <div class="shelf-price"><span class="now">₹249</span><span class="was">₹599</span></div>
-        <div class="shelf-off">58% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="14" width="32" height="36" rx="2" stroke="#FBF4E7" stroke-width="2.2"/><path d="M16 22h32" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>Curtain Set, 2 Panels</h4>
-        <div class="shelf-price"><span class="now">₹449</span><span class="was">₹999</span></div>
-        <div class="shelf-off">55% off</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="shelf" id="myntra-picks">
-    <div class="shelf-head">
-      <h2>Myntra</h2>
-      <a href="#" class="see-all">All Myntra deals →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M14 44 Q20 20 32 20 Q44 20 50 44" stroke="#FBF4E7" stroke-width="2.2" fill="none"/><ellipse cx="32" cy="46" rx="20" ry="4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Casual Sneakers, Slip-resistant</h4>
-        <div class="shelf-price"><span class="now">₹1,399</span><span class="was">₹2,799</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
-        <h4>Denim Jacket, Unisex Fit</h4>
-        <div class="shelf-price"><span class="now">₹1,199</span><span class="was">₹2,399</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="24" cy="32" r="7" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="40" cy="32" r="7" stroke="#FBF4E7" stroke-width="2.2"/><path d="M31 32h2" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>UV Protected Sunglasses</h4>
-        <div class="shelf-price"><span class="now">₹599</span><span class="was">₹1,299</span></div>
-        <div class="shelf-off">54% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="14" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 24v8l6 4" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg></div>
-        <h4>Analog Wrist Watch</h4>
-        <div class="shelf-price"><span class="now">₹899</span><span class="was">₹1,999</span></div>
-        <div class="shelf-off">55% off</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="shelf" id="alibaba-picks">
-    <div class="shelf-head">
-      <h2>Alibaba <span class="shelf-note">(bulk &amp; wholesale)</span></h2>
-      <a href="#" class="see-all">All Alibaba deals →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="12" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 26v6l4 2" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>LED Bulbs, Pack of 50</h4>
-        <div class="shelf-price"><span class="now">₹2,999</span><span class="was">₹5,499</span></div>
-        <div class="shelf-off">45% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="24" width="24" height="20" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 24v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Custom Printed Tote Bags, 100 pcs</h4>
-        <div class="shelf-price"><span class="now">₹6,499</span><span class="was">₹10,999</span></div>
-        <div class="shelf-off">41% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="24" cy="30" r="8" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="40" cy="30" r="8" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Wireless Earbuds, Bulk Pack of 20</h4>
-        <div class="shelf-price"><span class="now">₹7,999</span><span class="was">₹13,999</span></div>
-        <div class="shelf-off">43% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M26 18h12v6h-12z" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 24h16v26a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4z" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Steel Water Bottles, Pack of 30</h4>
-        <div class="shelf-price"><span class="now">₹4,299</span><span class="was">₹7,999</span></div>
-        <div class="shelf-off">46% off</div>
-      </div>
-    </div>
-  </div>
-
-</section>
-
-<section class="shelves wrap" id="shelves">
-
-  <div class="shelf">
-    <div class="shelf-head">
-      <h2>Under ₹499, no exceptions</h2>
-      <a href="#" class="see-all">See the full shelf →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="26" r="10" stroke="#FBF4E7" stroke-width="2.2"/><path d="M16 50c0-9 7-16 16-16s16 7 16 16" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Cotton Bandana Print Dupatta</h4>
-        <div class="shelf-price"><span class="now">₹199</span><span class="was">₹549</span></div>
-        <div class="shelf-off">64% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="14" width="24" height="36" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><line x1="26" y1="22" x2="38" y2="22" stroke="#FBF4E7" stroke-width="2"/><line x1="26" y1="30" x2="38" y2="30" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>A5 Dot-Grid Notebook, Pack of 3</h4>
-        <div class="shelf-price"><span class="now">₹329</span><span class="was">₹699</span></div>
-        <div class="shelf-off">53% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Flipkart</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="26" width="28" height="18" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 26v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Braided USB-C Cable, 1.5m</h4>
-        <div class="shelf-price"><span class="now">₹249</span><span class="was">₹599</span></div>
-        <div class="shelf-off">58% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 44V24a12 12 0 0 1 24 0v20" stroke="#FBF4E7" stroke-width="2.2"/><rect x="16" y="44" width="32" height="6" rx="2" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Stoneware Coffee Mug, Set of 2</h4>
-        <div class="shelf-price"><span class="now">₹279</span><span class="was">₹699</span></div>
-        <div class="shelf-off">60% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="20" width="32" height="24" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="32" r="6" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>Compact Power Bank, 10,000mAh</h4>
-        <div class="shelf-price"><span class="now">₹499</span><span class="was">₹999</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="shelf">
-    <div class="shelf-head">
-      <h2>Home &amp; kitchen, worth the counter space</h2>
-      <a href="#" class="see-all">See the full shelf →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="18" width="28" height="28" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><path d="M18 30h28" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>2-Slice Pop-up Toaster, 750W</h4>
-        <div class="shelf-price"><span class="now">₹1,199</span><span class="was">₹2,290</span></div>
-        <div class="shelf-off">48% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Flipkart</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 18v28a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4V18" stroke="#FBF4E7" stroke-width="2.2"/><path d="M20 26h24" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>750W Mixer Grinder, 3 Jars</h4>
-        <div class="shelf-price"><span class="now">₹1,699</span><span class="was">₹3,150</span></div>
-        <div class="shelf-off">46% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="22" width="32" height="20" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="32" r="4" stroke="#FBF4E7" stroke-width="2"/></svg></div>
-        <h4>Non-stick Induction Cookware, 5pc</h4>
-        <div class="shelf-price"><span class="now">₹1,899</span><span class="was">₹3,999</span></div>
-        <div class="shelf-off">52% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 20h24v6a12 12 0 0 1-24 0z" stroke="#FBF4E7" stroke-width="2.2"/><path d="M26 44h12" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Copper Bottom Kadhai, 2.5L</h4>
-        <div class="shelf-price"><span class="now">₹649</span><span class="was">₹1,299</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="shelf">
-    <div class="shelf-head">
-      <h2>Fashion drops, this week only</h2>
-      <a href="#" class="see-all">See the full shelf →</a>
-    </div>
-    <div class="shelf-row">
-      <div class="shelf-card">
-        <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
-        <h4>Men's Cotton Casual Shirt</h4>
-        <div class="shelf-price"><span class="now">₹399</span><span class="was">₹899</span></div>
-        <div class="shelf-off">56% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Ajio</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
-        <h4>Oversized Graphic Tee</h4>
-        <div class="shelf-price"><span class="now">₹449</span><span class="was">₹999</span></div>
-        <div class="shelf-off">55% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Flipkart</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M14 44 Q20 20 32 20 Q44 20 50 44" stroke="#FBF4E7" stroke-width="2.2" fill="none"/><ellipse cx="32" cy="46" rx="20" ry="4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Women's Canvas Sneakers</h4>
-        <div class="shelf-price"><span class="now">₹899</span><span class="was">₹1,799</span></div>
-        <div class="shelf-off">50% off</div>
-      </div>
-      <div class="shelf-card">
-        <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="24" width="24" height="20" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 24v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
-        <h4>Quilted Sling Bag</h4>
-        <div class="shelf-price"><span class="now">₹329</span><span class="was">₹799</span></div>
-        <div class="shelf-off">59% off</div>
-      </div>
-    </div>
-  </div>
-
-</section>
-
-<section class="hunt" id="hunt">
-  <div class="wrap">
-    <div class="hunt-head">
-      <div class="eyebrow">The process</div>
-      <h2 class="display">How a deal earns<br>a spot here.</h2>
-      <p>Not every "sale" is real. Most are a price bumped up the week before, then "discounted" back to normal. Here's the filter every listing goes through before it reaches you.</p>
-    </div>
-    <div class="hunt-steps">
-      <div class="hunt-step">
-        <div class="hunt-tag">01</div>
-        <h3>Spot the drop</h3>
-        <p>We track price history across Amazon, Flipkart, Meesho and Ajio, not just today's sticker.</p>
-      </div>
-      <div class="hunt-step">
-        <div class="hunt-tag">02</div>
-        <h3>Check it's real</h3>
-        <p>We compare against the 90-day average price. If it's not a genuine low, it doesn't get listed.</p>
-      </div>
-      <div class="hunt-step">
-        <div class="hunt-tag">03</div>
-        <h3>You tap, you save</h3>
-        <p>One tap takes you straight to the retailer's checkout. Nothing to sign up for, nothing extra to buy.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="trust wrap" id="trust">
-  <div class="trust-strip">
-    <div>
-      <div class="tlabel">We currently compare prices across</div>
-    </div>
-    <div class="platform-list">
-      <span>Amazon</span>
-      <span>Flipkart</span>
-      <span>Meesho</span>
-      <span>Ajio</span>
-      <span>Myntra</span>
-    </div>
-  </div>
-</section>
-
-<section class="signup">
-  <div class="wrap">
-    <div class="eyebrow" style="justify-content:center;">Don't miss the next one</div>
-    <h2 class="display">Genuine drops, straight<br>to your <em>inbox</em>.</h2>
-    <p>One email a day, only when there's something worth opening it for. Unsubscribe whenever.</p>
-    <form class="signup-form" onsubmit="return false;">
-      <input type="email" placeholder="you@example.com" required>
-      <button type="submit">Send me deals</button>
-    </form>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <div class="foot-grid">
-      <div class="foot-brand">
-        <div class="logo">
-          <div class="stamp">HM</div>
-          <div>Haul&nbsp;Mandi</div>
-        </div>
-        <p>An independent price-comparison and deals publication. We don't sell anything ourselves — we point you to the retailer with the genuine best price.</p>
-      </div>
-      <div class="foot-cols">
-        <div class="foot-col">
-          <h5>Browse</h5>
-          <a href="#">Today's Haul</a>
-          <a href="#">Under ₹499</a>
-          <a href="#">Home &amp; Kitchen</a>
-          <a href="#">Fashion</a>
-        </div>
-        <div class="foot-col">
-          <h5>Haul Mandi</h5>
-          <a href="#">How pricing works</a>
-          <a href="#">About us</a>
-          <a href="#">Contact</a>
-        </div>
-        <div class="foot-col">
-          <h5>Legal</h5>
-          <a href="#">Affiliate disclosure</a>
-          <a href="#">Privacy policy</a>
-          <a href="#">Terms</a>
-        </div>
-      </div>
-    </div>
-    <div class="disclosure">
-      <strong>Affiliate disclosure:</strong> Haul Mandi earns a commission when you buy through links on this site, at no extra cost to you. We are not affiliated with, endorsed by, or sponsored by Amazon, Flipkart, Meesho, Ajio, or Myntra. All trademarks belong to their respective owners.
-    </div>
-  </div>
-</footer>
-
-<script>
-  // ---- full-width banner: autoplay + dots + arrows ----
-  const bannerTrack = document.getElementById('bannerTrack');
-  const bannerSlides = bannerTrack.children;
-  const slideCount = bannerSlides.length;
-  const bannerDotsWrap = document.getElementById('bannerDots');
-  const bannerViewport = document.getElementById('bannerViewport');
-  let bannerIndex = 0;
-  let bannerTimer = null;
-  const AUTOPLAY_MS = 4800;
-
-  for(let i=0;i<slideCount;i++){
-    const d = document.createElement('div');
-    d.className = 'dot' + (i===0 ? ' active' : '');
-    d.addEventListener('click', () => goToBanner(i));
-    bannerDotsWrap.appendChild(d);
-  }
-  const bannerDotEls = bannerDotsWrap.children;
-
-  function renderBanner(){
-    bannerTrack.style.transform = `translateX(-${bannerIndex * 100}%)`;
-    for(let i=0;i<bannerDotEls.length;i++){
-      bannerDotEls[i].classList.toggle('active', i===bannerIndex);
+// --- 2. ADD A NEW PRODUCT: paste an affiliate link, we fetch title/image/price ---
+// Protected: requires the correct admin key, so only you can add products.
+app.post("/api/links", async (req, res) => {
+  try {
+    const providedKey = req.headers["x-admin-key"];
+    if (!process.env.ADMIN_KEY || providedKey !== process.env.ADMIN_KEY) {
+      return res.status(401).json({ error: "Unauthorized — incorrect or missing admin key." });
     }
-  }
-  function goToBanner(i){
-    bannerIndex = (i + slideCount) % slideCount;
-    renderBanner();
-    restartAutoplay();
-  }
-  function nextBanner(){ goToBanner(bannerIndex + 1); }
-  function prevBanner(){ goToBanner(bannerIndex - 1); }
 
-  function startAutoplay(){
-    bannerTimer = setInterval(() => {
-      bannerIndex = (bannerIndex + 1) % slideCount;
-      renderBanner();
-    }, AUTOPLAY_MS);
-  }
-  function restartAutoplay(){
-    clearInterval(bannerTimer);
-    startAutoplay();
-  }
+    const { product_id, affiliate_url, title, image_url, price } = req.body;
 
-  document.getElementById('bannerNext').addEventListener('click', nextBanner);
-  document.getElementById('bannerPrev').addEventListener('click', prevBanner);
-  bannerViewport.addEventListener('mouseenter', () => clearInterval(bannerTimer));
-  bannerViewport.addEventListener('mouseleave', () => restartAutoplay());
-
-  renderBanner();
-  if(!window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-    startAutoplay();
-  }
-
-  // ---- marquee content, duplicated for seamless loop ----
-  const marqueeItems = [
-    "62% off — ANC Headphones just dropped",
-    "New low — Air Fryer 4L at ₹2,999",
-    "Price watch — Smartwatch back down to ₹1,799",
-    "Verified — 90-day average confirms this is a real deal",
-    "Trending — Ethnic wear under ₹500"
-  ];
-  const inner = document.getElementById('marqueeInner');
-  function buildMarquee(){
-    let html = '';
-    for(let rep=0; rep<2; rep++){
-      marqueeItems.forEach(item => {
-        html += `<span class="marquee-item">${item} <span class="dot-sep">·</span></span>`;
-      });
+    if (!product_id || !affiliate_url) {
+      return res.status(400).json({ error: "product_id and affiliate_url are required" });
     }
-    inner.innerHTML = html;
-  }
-  buildMarquee();
 
-  // ---- reduced motion respect ----
-  if(window.matchMedia('(prefers-reduced-motion: reduce)').matches){
-    document.querySelector('.marquee-inner').style.animation = 'none';
-  }
-</script>
+    // If you typed in title/image/price yourself, use those directly.
+    // Otherwise, try to auto-fetch them (Meesho sometimes blocks this).
+    let finalTitle = title || null;
+    let finalImage = image_url || null;
+    let finalPrice = price || null;
+    let fetchBlocked = false;
 
-</body>
-</html>
+    if (!finalTitle || !finalImage) {
+      const preview = await fetchProductPreview(affiliate_url);
+      if (preview.blocked) {
+        fetchBlocked = true;
+      } else {
+        finalTitle = finalTitle || preview.title;
+        finalImage = finalImage || preview.image;
+        finalPrice = finalPrice || preview.price;
+      }
+    }
+
+    const { data, error } = await supabase
+      .from("meesho_links")
+      .upsert(
+        {
+          product_id,
+          affiliate_url,
+          title: finalTitle,
+          image_url: finalImage,
+          price: finalPrice,
+        },
+        { onConflict: "product_id" }
+      )
+      .select()
+      .single();
+
+    if (error) {
+      return res.status(500).json({ error: error.message });
+    }
+
+    return res.json({ success: true, product: data, fetchBlocked });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ error: "Something went wrong fetching the product preview." });
+  }
+});
+
+// --- 3. LIST ALL PRODUCTS (useful for showing them on your site) ---
+app.get("/api/links", async (req, res) => {
+  const { data, error } = await supabase
+    .from("meesho_links")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  return res.json(data);
+});
+
+// --- Helper: fetch title/image/price from a product page using Open Graph tags ---
+async function fetchProductPreview(url) {
+  const response = await fetch(url, {
+    redirect: "follow",
+    headers: {
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36",
+    },
+  });
+
+  const html = await response.text();
+  const $ = cheerio.load(html);
+
+  const title =
+    $('meta[property="og:title"]').attr("content") ||
+    $("title").text() ||
+    "";
+
+  const image = $('meta[property="og:image"]').attr("content") || null;
+
+  // Price isn't always in meta tags — this looks for common price patterns as a fallback.
+  const priceMatch = html.match(/₹\s?[\d,]+/);
+  const price = priceMatch ? priceMatch[0] : null;
+
+  // Detect common block/error pages instead of treating them as real product data
+  const lowerTitle = title.toLowerCase();
+  const blocked =
+    !response.ok ||
+    !title ||
+    lowerTitle.includes("access denied") ||
+    lowerTitle.includes("attention required") ||
+    lowerTitle.includes("just a moment") ||
+    lowerTitle.includes("captcha");
+
+  if (blocked) {
+    return { title: null, image: null, price: null, blocked: true };
+  }
+
+  return { title, image, price, blocked: false };
+}
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});
