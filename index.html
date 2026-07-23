@@ -1142,7 +1142,7 @@
       }
 
       row.innerHTML = products.map(p => `
-        <a class="shelf-card" href="${MEESHO_BACKEND_URL}/go/meesho/${encodeURIComponent(p.product_id)}" style="display:block;">
+        <a class="shelf-card" href="product.html?id=${encodeURIComponent(p.product_id)}" style="display:block;">
           <div class="shelf-store">Meesho</div>
           <div class="shelf-icon">
             ${p.image_url
