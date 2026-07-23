@@ -9,25 +9,27 @@
 <style>
   :root{
     --ink: #14171F;
-    --ink-soft: #1E2330;
-    --ink-softer: #2A3040;
-    --paper: #FBF4E7;
-    --paper-dim: #EFE6D3;
-    --saffron: #FF9F1C;
-    --saffron-dim: #E88E10;
+    --ink-soft: #FBF0DA;
+    --ink-softer: #F2DFAF;
+    --paper: #FFFCF4;
+    --paper-dim: #F3E9D2;
+    --bg-page: #F6E9CB;
+    --saffron: #E8720C;
+    --saffron-dim: #C25B04;
     --ticket-red: #D64545;
     --banyan: #2F9E63;
     --thread: #C9A15A;
     --ink-text: #14171F;
-    --muted: #9AA1B4;
-    --line: rgba(255,255,255,0.09);
+    --muted: #8A7A5E;
+    --muted-on-dark: rgba(251,244,231,0.68);
+    --line: rgba(43,32,19,0.12);
   }
 
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{
-    background:var(--ink);
-    color:var(--paper);
+    background:var(--bg-page);
+    color:var(--ink);
     font-family:'Inter', sans-serif;
     overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
@@ -71,10 +73,12 @@
   /* ---------- nav ---------- */
   header{
     position:sticky; top:0; z-index:100;
-    background:rgba(20,23,31,0.86);
+    background:rgba(246,233,203,0.86);
     backdrop-filter:blur(10px);
     border-bottom:1px solid var(--line);
+    transition:box-shadow .25s ease;
   }
+  header.scrolled{box-shadow:0 8px 24px -12px rgba(43,32,19,0.25);}
   .nav{
     display:flex; align-items:center; justify-content:space-between;
     padding:18px 28px;
@@ -82,7 +86,7 @@
   .logo{
     display:flex; align-items:center; gap:10px;
     font-family:'Fraunces', serif; font-weight:900; font-size:22px;
-    color:var(--paper);
+    color:var(--ink);
   }
   .logo .stamp{
     width:34px; height:34px; border-radius:50%;
@@ -101,8 +105,14 @@
   nav.links{
     display:flex; gap:34px; font-size:14.5px; font-weight:500; color:var(--muted);
   }
-  nav.links a{transition:color .2s;}
-  nav.links a:hover{color:var(--paper);}
+  nav.links a{transition:color .2s; position:relative;}
+  nav.links a:hover{color:var(--ink);}
+  nav.links a::after{
+    content:''; position:absolute; left:0; bottom:-4px;
+    width:0; height:1.5px; background:var(--saffron);
+    transition:width .25s ease;
+  }
+  nav.links a:hover::after{width:100%;}
   .nav-cta{
     background:var(--saffron); color:var(--ink);
     padding:10px 20px; border-radius:100px;
@@ -110,8 +120,9 @@
     border:none;
     transition:transform .15s ease, background .2s;
   }
-  .nav-cta:hover{background:#FFB347; transform:translateY(-1px);}
-  .burger{display:none; background:none; border:none; color:var(--paper);}
+  .nav-cta:hover{background:#FF8A2E; transform:translateY(-1px); box-shadow:0 8px 20px -6px rgba(232,114,12,0.55);}
+  .nav-cta:active{transform:translateY(0) scale(.97);}
+  .burger{display:none; background:none; border:none; color:var(--ink);}
 
   /* ---------- hero ---------- */
   .hero{
@@ -137,7 +148,7 @@
     max-width:420px;
     padding-bottom:6px;
   }
-  .hero-sub strong{color:var(--paper); font-weight:600;}
+  .hero-sub strong{color:var(--ink); font-weight:600;}
 
   /* ---------- ticket slider ---------- */
   .slider-region{position:relative;}
@@ -160,10 +171,10 @@
     color:var(--ink-text);
     border-radius:14px;
     padding:20px 18px 22px;
-    box-shadow:0 18px 40px -14px rgba(0,0,0,0.55);
-    transition:transform .25s ease, box-shadow .25s ease;
+    box-shadow:0 14px 30px -16px rgba(43,32,19,0.35);
+    transition:transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
   }
-  .ticket:hover{transform:translateY(-6px); box-shadow:0 26px 50px -14px rgba(0,0,0,0.6);}
+  .ticket:hover{transform:translateY(-8px) rotate(-0.6deg); box-shadow:0 30px 46px -18px rgba(43,32,19,0.4);}
 
   /* hole punch */
   .ticket::before{
@@ -171,7 +182,7 @@
     position:absolute; top:-8px; left:50%;
     transform:translateX(-50%);
     width:16px; height:16px;
-    background:var(--ink);
+    background:var(--bg-page);
     border-radius:50%;
   }
   .ticket-badge{
@@ -220,7 +231,7 @@
     content:'';
     position:absolute; top:-7px;
     width:14px; height:14px;
-    background:var(--ink);
+    background:var(--bg-page);
     border-radius:50%;
   }
   .cut-line::before{left:-7px;}
@@ -260,12 +271,14 @@
   .arrow-btns{display:flex; gap:10px;}
   .arrow-btn{
     width:42px; height:42px; border-radius:50%;
-    background:var(--ink-soft); border:1px solid var(--line);
-    color:var(--paper);
+    background:var(--paper); border:1px solid var(--line);
+    color:var(--ink);
     display:flex; align-items:center; justify-content:center;
-    transition:background .2s, transform .15s;
+    transition:background .2s, transform .15s, box-shadow .2s;
+    box-shadow:0 6px 16px -10px rgba(43,32,19,0.4);
   }
-  .arrow-btn:hover{background:var(--saffron); color:var(--ink); transform:scale(1.06);}
+  .arrow-btn:hover{background:var(--saffron); color:#fff; transform:scale(1.08);}
+  .arrow-btn:active{transform:scale(0.94);}
 
   /* ---------- full-width hero banner ---------- */
   .hero-banner{width:100%; position:relative;}
@@ -290,8 +303,8 @@
   .slide-myntra{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(214,69,69,0.20), transparent 60%), var(--ink);}
   .slide-alibaba{background:radial-gradient(ellipse 900px 600px at 20% 30%, rgba(255,159,28,0.18), transparent 60%), var(--ink);}
   .banner-copy{max-width:480px; position:relative; z-index:2;}
-  .banner-h{font-size:clamp(32px, 4.4vw, 52px); margin-top:14px;}
-  .banner-p{color:var(--muted); font-size:16px; line-height:1.6; margin:18px 0 26px; max-width:400px;}
+  .banner-h{font-size:clamp(32px, 4.4vw, 52px); margin-top:14px; color:var(--paper);}
+  .banner-p{color:var(--muted-on-dark); font-size:16px; line-height:1.6; margin:18px 0 26px; max-width:400px;}
   .banner-cta{
     display:inline-block; background:var(--saffron); color:var(--ink);
     padding:13px 26px; border-radius:100px; font-weight:600; font-size:14.5px;
@@ -335,6 +348,70 @@
     color:var(--muted); font-style:normal; margin-left:8px;
   }
 
+  /* ---------- trending shelves (near hero) ---------- */
+  .trending{padding:56px 0 10px;}
+  .trending-grid{
+    display:grid; grid-template-columns:1fr 1fr; gap:24px;
+  }
+  .trend-panel{
+    background:var(--paper);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:22px;
+  }
+  .trend-panel-head{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:18px;
+  }
+  .trend-panel-head h3{
+    font-family:'Fraunces', serif; font-weight:600; font-style:italic;
+    font-size:19px; color:var(--ink);
+  }
+  .trend-panel-head .store-chip{
+    font-family:'Space Mono', monospace; font-size:10.5px; letter-spacing:0.08em;
+    text-transform:uppercase; color:var(--saffron); border:1px solid var(--saffron);
+    padding:4px 10px; border-radius:100px;
+  }
+  .trend-row{display:flex; gap:14px; overflow-x:auto; scrollbar-width:none; padding-bottom:4px;}
+  .trend-row::-webkit-scrollbar{display:none;}
+  .trend-card{
+    flex:0 0 auto; width:156px;
+    transition:transform .3s cubic-bezier(.22,1,.36,1);
+  }
+  .trend-card:hover{transform:translateY(-5px);}
+  .trend-thumb{
+    position:relative;
+    width:100%; height:112px;
+    background:var(--ink-softer);
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    margin-bottom:10px;
+    overflow:hidden;
+  }
+  .trend-thumb svg{width:44px; height:44px;}
+  .trend-thumb img{width:100%; height:100%; object-fit:cover;}
+  .trend-rank{
+    position:absolute; top:6px; left:6px;
+    background:var(--ink); color:var(--paper);
+    font-family:'Bebas Neue', sans-serif; font-size:12px;
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .trend-card h4{font-size:12.5px; font-weight:600; color:var(--ink); line-height:1.3; min-height:32px; margin-bottom:6px;}
+  .trend-card .price-line{display:flex; align-items:baseline; gap:6px; margin-bottom:4px;}
+  .trend-card .price-line .now{font-family:'Bebas Neue', sans-serif; font-size:16px; color:var(--saffron);}
+  .trend-card .price-line .was{font-family:'Space Mono', monospace; font-size:10.5px; color:var(--muted); text-decoration:line-through;}
+  .trend-stat{
+    font-size:11px; color:var(--muted); font-weight:500;
+    display:flex; align-items:center; gap:4px;
+  }
+  .trend-stat .stat-flame{color:var(--ticket-red);}
+  .trend-stat .stat-star{color:var(--saffron);}
+
+  @media (max-width:860px){
+    .trending-grid{grid-template-columns:1fr;}
+  }
+
   /* ---------- marquee ---------- */
   .marquee-band{
     border-top:1px solid var(--line);
@@ -371,7 +448,7 @@
   }
   .shelf-head h2{
     font-family:'Fraunces', serif; font-weight:600; font-style:italic;
-    font-size:clamp(24px,3vw,32px); color:var(--paper);
+    font-size:clamp(24px,3vw,32px); color:var(--ink);
   }
   .shelf-head .see-all{
     font-size:13.5px; font-weight:600; color:var(--saffron);
@@ -385,13 +462,19 @@
   .shelf-row::-webkit-scrollbar{display:none;}
   .shelf-card{
     flex:0 0 auto; width:200px;
-    background:var(--ink-soft);
+    background:var(--paper);
     border:1px solid var(--line);
     border-radius:12px;
     padding:16px;
-    transition:border-color .2s, transform .2s;
+    transition:border-color .25s ease, transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
+    box-shadow:0 2px 0 rgba(43,32,19,0.03);
   }
-  .shelf-card:hover{border-color:var(--saffron); transform:translateY(-4px);}
+  .shelf-card:hover{
+    border-color:var(--saffron);
+    transform:translateY(-6px);
+    box-shadow:0 22px 34px -18px rgba(43,32,19,0.35);
+  }
+  .shelf-card:hover .shelf-icon svg, .shelf-card:hover .shelf-icon img{transform:scale(1.08);}
   .shelf-icon{
     width:100%; height:92px;
     background:var(--ink-softer);
@@ -400,15 +483,15 @@
     margin-bottom:14px;
     overflow:hidden;
   }
-  .shelf-icon svg{width:42px; height:42px;}
-  .shelf-icon img{width:100%; height:100%; object-fit:cover;}
+  .shelf-icon svg{width:42px; height:42px; transition:transform .3s ease;}
+  .shelf-icon img{width:100%; height:100%; object-fit:cover; transition:transform .3s ease;}
   .shelf-store{
     font-family:'Space Mono', monospace; font-size:9.5px;
     letter-spacing:0.1em; text-transform:uppercase; color:var(--muted);
     margin-bottom:5px;
   }
   .shelf-card h4{
-    font-size:14px; font-weight:600; color:var(--paper);
+    font-size:14px; font-weight:600; color:var(--ink);
     margin-bottom:10px; line-height:1.3; min-height:36px;
   }
   .shelf-price{
@@ -459,7 +542,7 @@
   }
   .hunt-step h3{
     font-family:'Fraunces', serif; font-weight:600; font-size:21px;
-    margin-bottom:12px; color:var(--paper);
+    margin-bottom:12px; color:var(--ink);
   }
   .hunt-step p{color:var(--muted); font-size:14.5px; line-height:1.6; max-width:280px;}
 
@@ -473,6 +556,7 @@
     color:var(--ink);
     border-radius:18px;
     margin-bottom:0;
+    box-shadow:0 14px 34px -20px rgba(43,32,19,0.4);
   }
   .trust-strip .tlabel{
     font-family:'Space Mono', monospace; font-size:11.5px;
@@ -494,17 +578,23 @@
     display:flex; justify-content:center; gap:10px; flex-wrap:wrap;
   }
   .signup-form input{
-    background:var(--ink-soft); border:1px solid var(--line);
-    color:var(--paper); padding:14px 18px; border-radius:100px;
+    background:var(--paper); border:1px solid var(--line);
+    color:var(--ink); padding:14px 18px; border-radius:100px;
     font-family:'Inter'; font-size:14.5px; width:300px; max-width:70vw;
+    transition:box-shadow .2s ease, border-color .2s ease;
   }
   .signup-form input::placeholder{color:var(--muted);}
-  .signup-form button{
-    background:var(--saffron); color:var(--ink); border:none;
-    padding:14px 28px; border-radius:100px; font-weight:600; font-size:14.5px;
-    transition:background .2s;
+  .signup-form input:focus{
+    outline:none; border-color:var(--saffron);
+    box-shadow:0 0 0 4px rgba(232,114,12,0.15);
   }
-  .signup-form button:hover{background:#FFB347;}
+  .signup-form button{
+    background:var(--saffron); color:#fff; border:none;
+    padding:14px 28px; border-radius:100px; font-weight:600; font-size:14.5px;
+    transition:background .2s, transform .15s;
+  }
+  .signup-form button:hover{background:#FF8A2E; transform:translateY(-1px);}
+  .signup-form button:active{transform:translateY(0) scale(.97);}
 
   /* ---------- footer ---------- */
   footer{
@@ -522,16 +612,72 @@
     text-transform:uppercase; color:var(--muted); margin-bottom:16px;
   }
   .foot-col a{
-    display:block; font-size:14px; color:var(--paper); opacity:0.75;
-    margin-bottom:11px; transition:opacity .2s;
+    display:block; font-size:14px; color:var(--ink); opacity:0.72;
+    margin-bottom:11px; transition:opacity .2s, transform .2s, color .2s;
   }
-  .foot-col a:hover{opacity:1; color:var(--saffron);}
+  .foot-col a:hover{opacity:1; color:var(--saffron); transform:translateX(3px);}
   .disclosure{
     border-top:1px solid var(--line);
     padding-top:24px;
     font-size:12.5px; color:var(--muted); line-height:1.7;
   }
-  .disclosure strong{color:var(--paper);}
+  .disclosure strong{color:var(--ink);}
+
+  /* ---------- scroll reveal ---------- */
+  .reveal{
+    opacity:0; transform:translateY(28px);
+    transition:opacity .7s cubic-bezier(.22,1,.36,1), transform .7s cubic-bezier(.22,1,.36,1);
+  }
+  .reveal.in-view{opacity:1; transform:translateY(0);}
+
+  /* ---------- page loader ---------- */
+  #pageLoader{
+    position:fixed; inset:0; z-index:9999;
+    background:var(--bg-page);
+    display:flex; align-items:center; justify-content:center;
+    transition:opacity .5s ease, visibility .5s ease;
+  }
+  #pageLoader.loader-hidden{opacity:0; visibility:hidden; pointer-events:none;}
+  .loader-mark{
+    width:56px; height:56px; border-radius:50%;
+    border:3px solid var(--line);
+    border-top-color:var(--saffron);
+    animation:loader-spin 0.9s linear infinite;
+  }
+  @keyframes loader-spin{to{transform:rotate(360deg);}}
+
+  /* ---------- cursor glow (hero banner ambience) ---------- */
+  .banner-viewport{position:relative; --mx:50%; --my:50%;}
+  .banner-viewport::before{
+    content:'';
+    position:absolute; inset:0; z-index:1;
+    background:radial-gradient(circle 260px at var(--mx) var(--my), rgba(232,114,12,0.16), transparent 70%);
+    pointer-events:none;
+    opacity:0; transition:opacity .3s ease;
+  }
+  .banner-viewport.glow-active::before{opacity:1;}
+
+  /* ---------- button press / ripple ---------- */
+  .nav-cta, .banner-cta, .buy-btn, .signup-form button{
+    position:relative; overflow:hidden;
+  }
+  .ripple{
+    position:absolute; border-radius:50%;
+    background:rgba(255,255,255,0.55);
+    transform:scale(0);
+    animation:ripple-out .55s ease-out forwards;
+    pointer-events:none;
+  }
+  @keyframes ripple-out{
+    to{transform:scale(1); opacity:0;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .reveal{opacity:1; transform:none; transition:none;}
+    .loader-mark{animation:none;}
+    .banner-viewport::before{display:none;}
+    .ripple{display:none;}
+  }
 
   /* ---------- responsive ---------- */
   @media (max-width:860px){
@@ -553,6 +699,8 @@
 </style>
 </head>
 <body>
+
+<div id="pageLoader" aria-hidden="true"><div class="loader-mark"></div></div>
 
 <header>
   <div class="nav wrap">
@@ -652,6 +800,108 @@
   </div>
 </section>
 
+<!--
+  Trending shelves — currently curated by hand (edit the cards below directly).
+  Not wired to the database, so this adds zero extra load right now.
+  If you later want these live, see the note at the top of the script block
+  for how to do it without hammering the DB on every pageview.
+-->
+<section class="trending wrap" data-reveal>
+  <div class="trending-grid">
+
+    <div class="trend-panel">
+      <div class="trend-panel-head">
+        <h3>Most bought on Amazon this week</h3>
+        <span class="store-chip">Amazon</span>
+      </div>
+      <div class="trend-row">
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">1</div>
+            <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" stroke="#2B2013" stroke-width="2.2"/><path d="M32 22v10l7 4" stroke="#2B2013" stroke-width="2.2" stroke-linecap="round"/></svg>
+          </div>
+          <h4>Robot Vacuum Cleaner, App Control</h4>
+          <div class="price-line"><span class="now">₹8,999</span><span class="was">₹15,999</span></div>
+          <div class="trend-stat"><span class="stat-flame">●</span> Bought 410+ times this week</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">2</div>
+            <svg viewBox="0 0 64 64" fill="none"><rect x="20" y="26" width="24" height="16" rx="6" stroke="#2B2013" stroke-width="2.2"/><circle cx="32" cy="34" r="2.4" fill="#2B2013"/></svg>
+          </div>
+          <h4>Wireless Mouse, Silent Click</h4>
+          <div class="price-line"><span class="now">₹399</span><span class="was">₹799</span></div>
+          <div class="trend-stat"><span class="stat-flame">●</span> Bought 365+ times this week</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">3</div>
+            <svg viewBox="0 0 64 64" fill="none"><path d="M20 46V26a12 12 0 0 1 24 0v20" stroke="#2B2013" stroke-width="2.2"/><rect x="16" y="46" width="32" height="6" rx="2" stroke="#2B2013" stroke-width="2.2"/></svg>
+          </div>
+          <h4>Anti-theft Laptop Backpack</h4>
+          <div class="price-line"><span class="now">₹899</span><span class="was">₹1,999</span></div>
+          <div class="trend-stat"><span class="stat-flame">●</span> Bought 298+ times this week</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">4</div>
+            <svg viewBox="0 0 64 64" fill="none"><rect x="18" y="22" width="28" height="24" rx="4" stroke="#2B2013" stroke-width="2.2"/><path d="M24 22v-4a8 8 0 0 1 16 0v4" stroke="#2B2013" stroke-width="2.2"/></svg>
+          </div>
+          <h4>Electric Pressure Cooker, 5L</h4>
+          <div class="price-line"><span class="now">₹3,499</span><span class="was">₹5,999</span></div>
+          <div class="trend-stat"><span class="stat-flame">●</span> Bought 240+ times this week</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="trend-panel">
+      <div class="trend-panel-head">
+        <h3>Most reviewed on Meesho</h3>
+        <span class="store-chip">Meesho</span>
+      </div>
+      <div class="trend-row">
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">1</div>
+            <svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg>
+          </div>
+          <h4>Printed Cotton Saree</h4>
+          <div class="price-line"><span class="now">₹399</span><span class="was">₹999</span></div>
+          <div class="trend-stat"><span class="stat-star">★</span> 4.6 · 2,340 reviews</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">2</div>
+            <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="24" r="8" stroke="#2B2013" stroke-width="2.2"/><path d="M24 40h16l-3 12h-10z" stroke="#2B2013" stroke-width="2.2"/></svg>
+          </div>
+          <h4>Artificial Jewellery Set</h4>
+          <div class="price-line"><span class="now">₹249</span><span class="was">₹599</span></div>
+          <div class="trend-stat"><span class="stat-star">★</span> 4.5 · 1,890 reviews</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">3</div>
+            <svg viewBox="0 0 64 64" fill="none"><path d="M20 44V24a12 12 0 0 1 24 0v20" stroke="#2B2013" stroke-width="2.2"/><rect x="16" y="44" width="32" height="6" rx="2" stroke="#2B2013" stroke-width="2.2"/></svg>
+          </div>
+          <h4>Stoneware Coffee Mug, Set of 2</h4>
+          <div class="price-line"><span class="now">₹279</span><span class="was">₹699</span></div>
+          <div class="trend-stat"><span class="stat-star">★</span> 4.4 · 1,520 reviews</div>
+        </div>
+        <div class="trend-card">
+          <div class="trend-thumb">
+            <div class="trend-rank">4</div>
+            <svg viewBox="0 0 64 64" fill="none"><path d="M22 24h20l3 22H19z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/><circle cx="32" cy="20" r="4" stroke="#2B2013" stroke-width="2"/></svg>
+          </div>
+          <h4>Kids Frock Set, Pack of 2</h4>
+          <div class="price-line"><span class="now">₹299</span><span class="was">₹699</span></div>
+          <div class="trend-stat"><span class="stat-star">★</span> 4.3 · 1,205 reviews</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
 <div class="marquee-band">
   <div class="marquee-inner" id="marqueeInner">
     <!-- duplicated via JS -->
@@ -669,25 +919,25 @@
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 22v10l7 4" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" stroke="#2B2013" stroke-width="2.2"/><path d="M32 22v10l7 4" stroke="#2B2013" stroke-width="2.2" stroke-linecap="round"/></svg></div>
         <h4>Robot Vacuum Cleaner, App Control</h4>
         <div class="shelf-price"><span class="now">₹8,999</span><span class="was">₹15,999</span></div>
         <div class="shelf-off">44% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="22" width="28" height="24" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 22v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="22" width="28" height="24" rx="4" stroke="#2B2013" stroke-width="2.2"/><path d="M24 22v-4a8 8 0 0 1 16 0v4" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Electric Pressure Cooker, 5L</h4>
         <div class="shelf-price"><span class="now">₹3,499</span><span class="was">₹5,999</span></div>
         <div class="shelf-off">42% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 46V26a12 12 0 0 1 24 0v20" stroke="#FBF4E7" stroke-width="2.2"/><rect x="16" y="46" width="32" height="6" rx="2" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 46V26a12 12 0 0 1 24 0v20" stroke="#2B2013" stroke-width="2.2"/><rect x="16" y="46" width="32" height="6" rx="2" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Anti-theft Laptop Backpack</h4>
         <div class="shelf-price"><span class="now">₹899</span><span class="was">₹1,999</span></div>
         <div class="shelf-off">55% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="26" width="24" height="16" rx="6" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="34" r="2.4" fill="#FBF4E7"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="26" width="24" height="16" rx="6" stroke="#2B2013" stroke-width="2.2"/><circle cx="32" cy="34" r="2.4" fill="#2B2013"/></svg></div>
         <h4>Wireless Mouse, Silent Click</h4>
         <div class="shelf-price"><span class="now">₹399</span><span class="was">₹799</span></div>
         <div class="shelf-off">50% off</div>
@@ -702,25 +952,25 @@
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="14" y="18" width="36" height="26" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 50h16" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="14" y="18" width="36" height="26" rx="3" stroke="#2B2013" stroke-width="2.2"/><path d="M24 50h16" stroke="#2B2013" stroke-width="2.2" stroke-linecap="round"/></svg></div>
         <h4>24" Gaming Monitor, 144Hz</h4>
         <div class="shelf-price"><span class="now">₹9,499</span><span class="was">₹13,999</span></div>
         <div class="shelf-off">32% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="22" y="16" width="20" height="32" rx="8" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="38" r="3" fill="#FBF4E7"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="22" y="16" width="20" height="32" rx="8" stroke="#2B2013" stroke-width="2.2"/><circle cx="32" cy="38" r="3" fill="#2B2013"/></svg></div>
         <h4>Portable Bluetooth Speaker</h4>
         <div class="shelf-price"><span class="now">₹1,299</span><span class="was">₹2,599</span></div>
         <div class="shelf-off">50% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
         <h4>Men's Formal Shirts, Pack of 2</h4>
         <div class="shelf-price"><span class="now">₹699</span><span class="was">₹1,499</span></div>
         <div class="shelf-off">53% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="26" width="32" height="14" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="24" cy="33" r="2.4" fill="#FBF4E7"/><circle cx="32" cy="33" r="2.4" fill="#FBF4E7"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="26" width="32" height="14" rx="3" stroke="#2B2013" stroke-width="2.2"/><circle cx="24" cy="33" r="2.4" fill="#2B2013"/><circle cx="32" cy="33" r="2.4" fill="#2B2013"/></svg></div>
         <h4>Induction Cooktop, 1800W</h4>
         <div class="shelf-price"><span class="now">₹1,599</span><span class="was">₹2,999</span></div>
         <div class="shelf-off">47% off</div>
@@ -735,25 +985,25 @@
     </div>
     <div class="shelf-row" id="meeshoShelfRow">
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
         <h4>Printed Cotton Saree</h4>
         <div class="shelf-price"><span class="now">₹399</span><span class="was">₹999</span></div>
         <div class="shelf-off">60% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 24h20l3 22H19z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/><circle cx="32" cy="20" r="4" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 24h20l3 22H19z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/><circle cx="32" cy="20" r="4" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>Kids Frock Set, Pack of 2</h4>
         <div class="shelf-price"><span class="now">₹299</span><span class="was">₹699</span></div>
         <div class="shelf-off">57% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="24" r="8" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 40h16l-3 12h-10z" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="24" r="8" stroke="#2B2013" stroke-width="2.2"/><path d="M24 40h16l-3 12h-10z" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Artificial Jewellery Set</h4>
         <div class="shelf-price"><span class="now">₹249</span><span class="was">₹599</span></div>
         <div class="shelf-off">58% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="14" width="32" height="36" rx="2" stroke="#FBF4E7" stroke-width="2.2"/><path d="M16 22h32" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="14" width="32" height="36" rx="2" stroke="#2B2013" stroke-width="2.2"/><path d="M16 22h32" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>Curtain Set, 2 Panels</h4>
         <div class="shelf-price"><span class="now">₹449</span><span class="was">₹999</span></div>
         <div class="shelf-off">55% off</div>
@@ -768,25 +1018,25 @@
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M14 44 Q20 20 32 20 Q44 20 50 44" stroke="#FBF4E7" stroke-width="2.2" fill="none"/><ellipse cx="32" cy="46" rx="20" ry="4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M14 44 Q20 20 32 20 Q44 20 50 44" stroke="#2B2013" stroke-width="2.2" fill="none"/><ellipse cx="32" cy="46" rx="20" ry="4" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Casual Sneakers, Slip-resistant</h4>
         <div class="shelf-price"><span class="now">₹1,399</span><span class="was">₹2,799</span></div>
         <div class="shelf-off">50% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
         <h4>Denim Jacket, Unisex Fit</h4>
         <div class="shelf-price"><span class="now">₹1,199</span><span class="was">₹2,399</span></div>
         <div class="shelf-off">50% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="24" cy="32" r="7" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="40" cy="32" r="7" stroke="#FBF4E7" stroke-width="2.2"/><path d="M31 32h2" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="24" cy="32" r="7" stroke="#2B2013" stroke-width="2.2"/><circle cx="40" cy="32" r="7" stroke="#2B2013" stroke-width="2.2"/><path d="M31 32h2" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>UV Protected Sunglasses</h4>
         <div class="shelf-price"><span class="now">₹599</span><span class="was">₹1,299</span></div>
         <div class="shelf-off">54% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="14" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 24v8l6 4" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="14" stroke="#2B2013" stroke-width="2.2"/><path d="M32 24v8l6 4" stroke="#2B2013" stroke-width="2.2" stroke-linecap="round"/></svg></div>
         <h4>Analog Wrist Watch</h4>
         <div class="shelf-price"><span class="now">₹899</span><span class="was">₹1,999</span></div>
         <div class="shelf-off">55% off</div>
@@ -801,25 +1051,25 @@
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="12" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 26v6l4 2" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="12" stroke="#2B2013" stroke-width="2.2"/><path d="M32 26v6l4 2" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>LED Bulbs, Pack of 50</h4>
         <div class="shelf-price"><span class="now">₹2,999</span><span class="was">₹5,499</span></div>
         <div class="shelf-off">45% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="24" width="24" height="20" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 24v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="24" width="24" height="20" rx="3" stroke="#2B2013" stroke-width="2.2"/><path d="M24 24v-4a8 8 0 0 1 16 0v4" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Custom Printed Tote Bags, 100 pcs</h4>
         <div class="shelf-price"><span class="now">₹6,499</span><span class="was">₹10,999</span></div>
         <div class="shelf-off">41% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="24" cy="30" r="8" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="40" cy="30" r="8" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="24" cy="30" r="8" stroke="#2B2013" stroke-width="2.2"/><circle cx="40" cy="30" r="8" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Wireless Earbuds, Bulk Pack of 20</h4>
         <div class="shelf-price"><span class="now">₹7,999</span><span class="was">₹13,999</span></div>
         <div class="shelf-off">43% off</div>
       </div>
       <div class="shelf-card">
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M26 18h12v6h-12z" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 24h16v26a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4z" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M26 18h12v6h-12z" stroke="#2B2013" stroke-width="2.2"/><path d="M24 24h16v26a4 4 0 0 1-4 4h-8a4 4 0 0 1-4-4z" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Steel Water Bottles, Pack of 30</h4>
         <div class="shelf-price"><span class="now">₹4,299</span><span class="was">₹7,999</span></div>
         <div class="shelf-off">46% off</div>
@@ -839,35 +1089,35 @@
     <div class="shelf-row">
       <div class="shelf-card">
         <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="26" r="10" stroke="#FBF4E7" stroke-width="2.2"/><path d="M16 50c0-9 7-16 16-16s16 7 16 16" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="26" r="10" stroke="#2B2013" stroke-width="2.2"/><path d="M16 50c0-9 7-16 16-16s16 7 16 16" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Cotton Bandana Print Dupatta</h4>
         <div class="shelf-price"><span class="now">₹199</span><span class="was">₹549</span></div>
         <div class="shelf-off">64% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="14" width="24" height="36" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><line x1="26" y1="22" x2="38" y2="22" stroke="#FBF4E7" stroke-width="2"/><line x1="26" y1="30" x2="38" y2="30" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="14" width="24" height="36" rx="3" stroke="#2B2013" stroke-width="2.2"/><line x1="26" y1="22" x2="38" y2="22" stroke="#2B2013" stroke-width="2"/><line x1="26" y1="30" x2="38" y2="30" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>A5 Dot-Grid Notebook, Pack of 3</h4>
         <div class="shelf-price"><span class="now">₹329</span><span class="was">₹699</span></div>
         <div class="shelf-off">53% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Flipkart</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="26" width="28" height="18" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 26v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="26" width="28" height="18" rx="3" stroke="#2B2013" stroke-width="2.2"/><path d="M24 26v-4a8 8 0 0 1 16 0v4" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Braided USB-C Cable, 1.5m</h4>
         <div class="shelf-price"><span class="now">₹249</span><span class="was">₹599</span></div>
         <div class="shelf-off">58% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 44V24a12 12 0 0 1 24 0v20" stroke="#FBF4E7" stroke-width="2.2"/><rect x="16" y="44" width="32" height="6" rx="2" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 44V24a12 12 0 0 1 24 0v20" stroke="#2B2013" stroke-width="2.2"/><rect x="16" y="44" width="32" height="6" rx="2" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Stoneware Coffee Mug, Set of 2</h4>
         <div class="shelf-price"><span class="now">₹279</span><span class="was">₹699</span></div>
         <div class="shelf-off">60% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="20" width="32" height="24" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="32" r="6" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="20" width="32" height="24" rx="4" stroke="#2B2013" stroke-width="2.2"/><circle cx="32" cy="32" r="6" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>Compact Power Bank, 10,000mAh</h4>
         <div class="shelf-price"><span class="now">₹499</span><span class="was">₹999</span></div>
         <div class="shelf-off">50% off</div>
@@ -883,28 +1133,28 @@
     <div class="shelf-row">
       <div class="shelf-card">
         <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="18" width="28" height="28" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><path d="M18 30h28" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="18" y="18" width="28" height="28" rx="4" stroke="#2B2013" stroke-width="2.2"/><path d="M18 30h28" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>2-Slice Pop-up Toaster, 750W</h4>
         <div class="shelf-price"><span class="now">₹1,199</span><span class="was">₹2,290</span></div>
         <div class="shelf-off">48% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Flipkart</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 18v28a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4V18" stroke="#FBF4E7" stroke-width="2.2"/><path d="M20 26h24" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 18v28a4 4 0 0 0 4 4h16a4 4 0 0 0 4-4V18" stroke="#2B2013" stroke-width="2.2"/><path d="M20 26h24" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>750W Mixer Grinder, 3 Jars</h4>
         <div class="shelf-price"><span class="now">₹1,699</span><span class="was">₹3,150</span></div>
         <div class="shelf-off">46% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Amazon</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="22" width="32" height="20" rx="4" stroke="#FBF4E7" stroke-width="2.2"/><circle cx="32" cy="32" r="4" stroke="#FBF4E7" stroke-width="2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="16" y="22" width="32" height="20" rx="4" stroke="#2B2013" stroke-width="2.2"/><circle cx="32" cy="32" r="4" stroke="#2B2013" stroke-width="2"/></svg></div>
         <h4>Non-stick Induction Cookware, 5pc</h4>
         <div class="shelf-price"><span class="now">₹1,899</span><span class="was">₹3,999</span></div>
         <div class="shelf-off">52% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 20h24v6a12 12 0 0 1-24 0z" stroke="#FBF4E7" stroke-width="2.2"/><path d="M26 44h12" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M20 20h24v6a12 12 0 0 1-24 0z" stroke="#2B2013" stroke-width="2.2"/><path d="M26 44h12" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Copper Bottom Kadhai, 2.5L</h4>
         <div class="shelf-price"><span class="now">₹649</span><span class="was">₹1,299</span></div>
         <div class="shelf-off">50% off</div>
@@ -920,28 +1170,28 @@
     <div class="shelf-row">
       <div class="shelf-card">
         <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
         <h4>Men's Cotton Casual Shirt</h4>
         <div class="shelf-price"><span class="now">₹399</span><span class="was">₹899</span></div>
         <div class="shelf-off">56% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Ajio</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M22 22h20l4 8-4 4v14H22V34l-4-4z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
         <h4>Oversized Graphic Tee</h4>
         <div class="shelf-price"><span class="now">₹449</span><span class="was">₹999</span></div>
         <div class="shelf-off">55% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Flipkart</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M14 44 Q20 20 32 20 Q44 20 50 44" stroke="#FBF4E7" stroke-width="2.2" fill="none"/><ellipse cx="32" cy="46" rx="20" ry="4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><path d="M14 44 Q20 20 32 20 Q44 20 50 44" stroke="#2B2013" stroke-width="2.2" fill="none"/><ellipse cx="32" cy="46" rx="20" ry="4" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Women's Canvas Sneakers</h4>
         <div class="shelf-price"><span class="now">₹899</span><span class="was">₹1,799</span></div>
         <div class="shelf-off">50% off</div>
       </div>
       <div class="shelf-card">
         <div class="shelf-store">Meesho</div>
-        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="24" width="24" height="20" rx="3" stroke="#FBF4E7" stroke-width="2.2"/><path d="M24 24v-4a8 8 0 0 1 16 0v4" stroke="#FBF4E7" stroke-width="2.2"/></svg></div>
+        <div class="shelf-icon"><svg viewBox="0 0 64 64" fill="none"><rect x="20" y="24" width="24" height="20" rx="3" stroke="#2B2013" stroke-width="2.2"/><path d="M24 24v-4a8 8 0 0 1 16 0v4" stroke="#2B2013" stroke-width="2.2"/></svg></div>
         <h4>Quilted Sling Bag</h4>
         <div class="shelf-price"><span class="now">₹329</span><span class="was">₹799</span></div>
         <div class="shelf-off">59% off</div>
@@ -1147,7 +1397,7 @@
           <div class="shelf-icon">
             ${p.image_url
               ? `<img src="${p.image_url}" alt="${p.title || 'Product'}" loading="lazy">`
-              : `<svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#FBF4E7" stroke-width="2.2" stroke-linejoin="round"/></svg>`
+              : `<svg viewBox="0 0 64 64" fill="none"><path d="M18 46 L24 20 H40 L46 46 Z" stroke="#2B2013" stroke-width="2.2" stroke-linejoin="round"/></svg>`
             }
           </div>
           <h4>${p.title || 'Meesho product'}</h4>
@@ -1161,6 +1411,90 @@
   }
 
   loadMeeshoProducts();
+
+  // ================================================================
+  // Everything below is presentation-only animation. None of it reads
+  // from or writes to the database — it just reacts to things already
+  // in the DOM (scroll position, mouse position, clicks). If the
+  // "trending" shelves above ever become DB-driven, compute the
+  // rankings once on the server (e.g. a nightly job) and serve the
+  // cached result, rather than querying on every pageview.
+  // ================================================================
+
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ---- page loader: hide once everything has loaded ----
+  const pageLoader = document.getElementById('pageLoader');
+  function hideLoader(){
+    if(pageLoader){ pageLoader.classList.add('loader-hidden'); }
+  }
+  window.addEventListener('load', hideLoader);
+  // Safety net so a slow asset can never leave the loader stuck on screen
+  setTimeout(hideLoader, 2500);
+
+  // ---- header shadow after scrolling past the top ----
+  const siteHeader = document.querySelector('header');
+  function onScrollHeader(){
+    if(window.scrollY > 12){ siteHeader.classList.add('scrolled'); }
+    else{ siteHeader.classList.remove('scrolled'); }
+  }
+  window.addEventListener('scroll', onScrollHeader, { passive:true });
+  onScrollHeader();
+
+  // ---- scroll-triggered reveal for sections and cards ----
+  const revealTargets = document.querySelectorAll(
+    '.shelf, .trend-panel, .hunt-step, .trust-strip, .signup .wrap > *'
+  );
+  revealTargets.forEach((el, i) => {
+    el.classList.add('reveal');
+    el.style.transitionDelay = prefersReducedMotion ? '0s' : `${Math.min(i % 4, 3) * 70}ms`;
+  });
+  if('IntersectionObserver' in window){
+    const revealObserver = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          entry.target.classList.add('in-view');
+          revealObserver.unobserve(entry.target);
+        }
+      });
+    }, { threshold:0.15, rootMargin:'0px 0px -60px 0px' });
+    revealTargets.forEach(el => revealObserver.observe(el));
+  } else {
+    // No IntersectionObserver support — just show everything
+    revealTargets.forEach(el => el.classList.add('in-view'));
+  }
+
+  // ---- subtle cursor glow inside the hero banner ----
+  if(!prefersReducedMotion && window.matchMedia('(pointer: fine)').matches){
+    bannerViewport.addEventListener('pointermove', (e) => {
+      const rect = bannerViewport.getBoundingClientRect();
+      const x = ((e.clientX - rect.left) / rect.width) * 100;
+      const y = ((e.clientY - rect.top) / rect.height) * 100;
+      bannerViewport.style.setProperty('--mx', `${x}%`);
+      bannerViewport.style.setProperty('--my', `${y}%`);
+      bannerViewport.classList.add('glow-active');
+    });
+    bannerViewport.addEventListener('pointerleave', () => {
+      bannerViewport.classList.remove('glow-active');
+    });
+  }
+
+  // ---- lightweight ripple feedback on primary buttons ----
+  if(!prefersReducedMotion){
+    document.querySelectorAll('.nav-cta, .banner-cta, .buy-btn, .signup-form button').forEach(btn => {
+      btn.addEventListener('click', function(e){
+        const rect = this.getBoundingClientRect();
+        const size = Math.max(rect.width, rect.height) * 1.4;
+        const ripple = document.createElement('span');
+        ripple.className = 'ripple';
+        ripple.style.width = ripple.style.height = `${size}px`;
+        ripple.style.left = `${(e.clientX ?? rect.left + rect.width/2) - rect.left - size/2}px`;
+        ripple.style.top = `${(e.clientY ?? rect.top + rect.height/2) - rect.top - size/2}px`;
+        this.appendChild(ripple);
+        ripple.addEventListener('animationend', () => ripple.remove());
+      });
+    });
+  }
 </script>
 
 </body>
