@@ -5,8 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Add Product - Haul Mandi Admin</title>
 <meta name="robots" content="noindex, nofollow" />
-  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-  <style>
+<style>
   body {
     font-family: -apple-system, Segoe UI, Roboto, sans-serif;
     max-width: 480px;
@@ -52,67 +51,85 @@
     display: none;
   }
   #preview img { max-width: 100%; border-radius: 6px; }
+  #logoutRow { margin-top: 24px; text-align: right; }
+  #logoutRow a { font-size: 13px; color: #888; }
 </style>
 </head>
 <body>
+
+  <!-- Simple lock screen: asks for your admin key once, then remembers it on this device -->
   <div id="login-gate" style="text-align:center; margin-top:80px;">
-  <h1>Admin Login Required</h1>
-  <button onclick="netlifyIdentity.open()">Log in to continue</button>
-</div>
+    <h1>Admin Access</h1>
+    <p style="color:#666; font-size:14px; margin:12px 0 20px;">Enter your admin key to continue.</p>
+    <input id="adminKeyInput" type="password" placeholder="Admin key" style="max-width:280px; margin:0 auto;" />
+    <button onclick="checkAdminKey()" style="max-width:280px;">Unlock</button>
+    <p id="loginError" style="color:#991b1b; font-size:13px; margin-top:10px; display:none;">Incorrect key.</p>
+  </div>
 
-<div id="admin-content" style="display:none;">
-  <h1>Add a new product</h1>
+  <div id="admin-content" style="display:none;">
+    <h1>Add a new product</h1>
 
-  <label>Backend URL (your Render URL, one-time setup)</label>
-  <input id="backendUrl" placeholder="https://haul-mandi-backend.onrender.com" />
+    <label>Backend URL (your Render URL, one-time setup)</label>
+    <input id="backendUrl" placeholder="https://haul-mandi-backend.onrender.com" />
 
-  <label>Product ID (short, unique — e.g. saree-red-001)</label>
-  <input id="productId" placeholder="saree-red-001" />
+    <label>Product ID (short, unique — e.g. saree-red-001)</label>
+    <input id="productId" placeholder="saree-red-001" />
 
-  <label>Meesho Affiliate Link (from your Creator Dashboard)</label>
-  <input id="affiliateUrl" placeholder="https://meesho.onelink.me/..." />
+    <label>Meesho Affiliate Link (from your Creator Dashboard)</label>
+    <input id="affiliateUrl" placeholder="https://meesho.onelink.me/..." />
 
-  <p style="margin-top:20px; font-size:13px; color:#666;">
-    Leave the fields below blank to try auto-fetching. Meesho often blocks this —
-    if it fails, fill these in yourself and click Add Product again.
-  </p>
+    <p style="margin-top:20px; font-size:13px; color:#666;">
+      Leave the fields below blank to try auto-fetching. Meesho often blocks this —
+      if it fails, fill these in yourself and click Add Product again.
+    </p>
 
-  <label>Title (optional)</label>
-  <input id="title" placeholder="e.g. Women's Cotton Kurti - Blue" />
+    <label>Title (optional)</label>
+    <input id="title" placeholder="e.g. Women's Cotton Kurti - Blue" />
 
-  <label>Image URL (optional)</label>
-  <input id="imageUrl" placeholder="Right-click product image on Meesho → Copy image address" />
+    <label>Image URL (optional)</label>
+    <input id="imageUrl" placeholder="Right-click product image on Meesho → Copy image address" />
 
-  <label>Price (optional)</label>
-  <input id="price" placeholder="e.g. ₹399" />
+    <label>Price (optional)</label>
+    <input id="price" placeholder="e.g. ₹399" />
 
-  <button id="submitBtn" onclick="addProduct()">Add Product</button>
+    <button id="submitBtn" onclick="addProduct()">Add Product</button>
 
-  <div id="result"></div>
-  <div id="preview">
-    <img id="previewImg" src="" alt="" />
-    <p id="previewTitle"></p>
-    <p id="previewPrice"></p>
+    <div id="result"></div>
+    <div id="preview">
+      <img id="previewImg" src="" alt="" />
+      <p id="previewTitle"></p>
+      <p id="previewPrice"></p>
+    </div>
+
+    <div id="logoutRow"><a href="#" onclick="lockAgain(); return false;">Lock this page</a></div>
   </div>
 
   <script>
-    netlifyIdentity.on('init', user => {
-  if (user) {
-    document.getElementById('login-gate').style.display = 'none';
-    document.getElementById('admin-content').style.display = 'block';
-  }
-});
-netlifyIdentity.on('login', () => {
-  document.getElementById('login-gate').style.display = 'none';
-  document.getElementById('admin-content').style.display = 'block';
-});
-netlifyIdentity.on('logout', () => location.reload());
-netlifyIdentity.init();
-    // Remembers your backend URL in this browser so you don't retype it every time
+    // --- Simple key-based lock (checked again by the backend on every request, so this isn't just decorative) ---
     window.onload = () => {
-      const saved = localStorage.getItem("hm_backend_url");
-      if (saved) document.getElementById("backendUrl").value = saved;
+      const savedKey = sessionStorage.getItem("hm_admin_key");
+      if (savedKey) unlock();
+
+      const savedBackend = localStorage.getItem("hm_backend_url");
+      if (savedBackend) document.getElementById("backendUrl").value = savedBackend;
     };
+
+    function checkAdminKey() {
+      const key = document.getElementById("adminKeyInput").value.trim();
+      if (!key) return;
+      sessionStorage.setItem("hm_admin_key", key);
+      unlock();
+    }
+
+    function unlock() {
+      document.getElementById("login-gate").style.display = "none";
+      document.getElementById("admin-content").style.display = "block";
+    }
+
+    function lockAgain() {
+      sessionStorage.removeItem("hm_admin_key");
+      location.reload();
+    }
 
     async function addProduct() {
       const backendUrl = document.getElementById("backendUrl").value.trim().replace(/\/$/, "");
@@ -124,13 +141,14 @@ netlifyIdentity.init();
       const resultEl = document.getElementById("result");
       const previewEl = document.getElementById("preview");
       const btn = document.getElementById("submitBtn");
+      const adminKey = sessionStorage.getItem("hm_admin_key");
 
       resultEl.style.display = "none";
       previewEl.style.display = "none";
 
       if (!backendUrl || !productId || !affiliateUrl) {
         resultEl.className = "error";
-        resultEl.textContent = "Please fill in all three fields.";
+        resultEl.textContent = "Please fill in Backend URL, Product ID, and Affiliate Link.";
         resultEl.style.display = "block";
         return;
       }
@@ -143,7 +161,10 @@ netlifyIdentity.init();
       try {
         const res = await fetch(`${backendUrl}/api/links`, {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            "x-admin-key": adminKey || "",
+          },
           body: JSON.stringify({
             product_id: productId,
             affiliate_url: affiliateUrl,
@@ -154,6 +175,11 @@ netlifyIdentity.init();
         });
 
         const data = await res.json();
+
+        if (res.status === 401) {
+          sessionStorage.removeItem("hm_admin_key");
+          throw new Error("Your admin key was rejected. Please unlock again.");
+        }
 
         if (!res.ok) {
           throw new Error(data.error || "Something went wrong.");
@@ -177,16 +203,21 @@ netlifyIdentity.init();
 
         document.getElementById("productId").value = "";
         document.getElementById("affiliateUrl").value = "";
+        document.getElementById("title").value = "";
+        document.getElementById("imageUrl").value = "";
+        document.getElementById("price").value = "";
       } catch (err) {
         resultEl.className = "error";
         resultEl.textContent = "Error: " + err.message;
         resultEl.style.display = "block";
+        if (err.message.includes("admin key")) {
+          setTimeout(() => location.reload(), 1500);
+        }
       } finally {
         btn.disabled = false;
         btn.textContent = "Add Product";
       }
     }
   </script>
-  </div>
 </body>
 </html>
