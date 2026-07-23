@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Product — Haul Mandi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,900;1,9..144,500;1,9..144,700&family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink: #14171F;
+    --ink-soft: #1E2330;
+    --paper: #FBF4E7;
+    --saffron: #FF9F1C;
+    --banyan: #2F9E63;
+    --muted: #9AA1B4;
+    --line: rgba(255,255,255,0.09);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--ink);
+    color:var(--paper);
+    font-family:'Inter', sans-serif;
+    min-height:100vh;
+  }
+  a{color:inherit; text-decoration:none;}
+  .wrap{max-width:760px; margin:0 auto; padding:40px 24px 80px;}
+  .back{
+    display:inline-flex; align-items:center; gap:8px;
+    color:var(--muted); font-size:14px; margin-bottom:32px;
+  }
+  .back:hover{color:var(--paper);}
+  .card{
+    background:var(--ink-soft);
+    border:1px solid var(--line);
+    border-radius:16px;
+    padding:32px;
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    gap:32px;
+  }
+  .product-image{
+    width:100%; aspect-ratio:1/1;
+    background:#2A3040;
+    border-radius:12px;
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .product-image img{width:100%; height:100%; object-fit:cover;}
+  .store-tag{
+    font-family:'Space Mono', monospace; font-size:11px;
+    letter-spacing:0.1em; text-transform:uppercase; color:var(--saffron);
+    margin-bottom:12px;
+  }
+  h1{
+    font-family:'Fraunces', serif; font-weight:600;
+    font-size:clamp(22px, 3vw, 30px); line-height:1.3;
+    margin-bottom:18px;
+  }
+  .price{
+    font-family:'Bebas Neue', sans-serif;
+    font-size:34px; color:var(--saffron);
+    margin-bottom:24px;
+  }
+  .buy-btn{
+    display:inline-block;
+    background:var(--saffron); color:var(--ink);
+    padding:15px 32px; border-radius:100px;
+    font-weight:600; font-size:15px;
+    transition:background .2s, transform .15s;
+  }
+  .buy-btn:hover{background:#FFB347; transform:translateY(-1px);}
+  .note{
+    margin-top:20px; font-size:13px; color:var(--muted); line-height:1.6;
+  }
+  .loading, .error-state{
+    text-align:center; padding:80px 20px; color:var(--muted);
+  }
+  @media (max-width:600px){
+    .card{grid-template-columns:1fr;}
+    .product-image{max-width:280px; margin:0 auto;}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a href="/#meesho-picks" class="back">← Back to deals</a>
+  <div id="content">
+    <div class="loading">Loading product…</div>
+  </div>
+</div>
+
+<script>
+  const BACKEND_URL = "https://haul-mandi-backend.onrender.com";
+
+  async function loadProduct(){
+    const params = new URLSearchParams(window.location.search);
+    const productId = params.get("id");
+    const contentEl = document.getElementById("content");
+
+    if(!productId){
+      contentEl.innerHTML = `<div class="error-state">No product specified.</div>`;
+      return;
+    }
+
+    try{
+      const res = await fetch(`${BACKEND_URL}/api/links/${encodeURIComponent(productId)}`);
+      if(!res.ok) throw new Error("Product not found");
+      const p = await res.json();
+
+      document.title = (p.title || "Product") + " — Haul Mandi";
+
+      contentEl.innerHTML = `
+        <div class="card">
+          <div class="product-image">
+            ${p.image_url ? `<img src="${p.image_url}" alt="${p.title || 'Product'}">` : ''}
+          </div>
+          <div>
+            <div class="store-tag">Meesho</div>
+            <h1>${p.title || "Meesho product"}</h1>
+            ${p.price ? `<div class="price">${p.price}</div>` : ''}
+            <a class="buy-btn" href="${BACKEND_URL}/go/meesho/${encodeURIComponent(p.product_id)}">
+              Grab this deal on Meesho →
+            </a>
+            <p class="note">You'll be taken to Meesho to complete your purchase. Haul Mandi may earn a commission at no extra cost to you.</p>
+          </div>
+        </div>
+      `;
+    }catch(err){
+      contentEl.innerHTML = `<div class="error-state">Sorry, we couldn't find that product.</div>`;
+    }
+  }
+
+  loadProduct();
+</script>
+</body>
+</html>
