@@ -644,9 +644,11 @@
     letter-spacing:0.1em; text-transform:uppercase; color:#8b8272;
   }
   .platform-list{display:flex; gap:30px; flex-wrap:wrap;}
-  .platform-list span{
+  .platform-list a{
     font-family:'Fraunces', serif; font-weight:600; font-size:17px;
+    color:var(--ink); transition:color .2s;
   }
+  .platform-list a:hover{color:var(--saffron);}
 
   /* ---------- newsletter ---------- */
   .signup{
@@ -1015,7 +1017,7 @@
   <div class="shelf" id="amazon-picks">
     <div class="shelf-head">
       <h2>Amazon</h2>
-      <a href="#" class="see-all">All Amazon deals →</a>
+      <a href="amazon.html" class="see-all">All Amazon deals →</a>
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
@@ -1048,7 +1050,7 @@
   <div class="shelf" id="flipkart-picks">
     <div class="shelf-head">
       <h2>Flipkart</h2>
-      <a href="#" class="see-all">All Flipkart deals →</a>
+      <a href="flipkart.html" class="see-all">All Flipkart deals →</a>
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
@@ -1081,7 +1083,7 @@
   <div class="shelf" id="meesho-picks">
     <div class="shelf-head">
       <h2>Meesho</h2>
-      <a href="#" class="see-all">All Meesho deals →</a>
+      <a href="meesho.html" class="see-all">All Meesho deals →</a>
     </div>
     <div class="shelf-row" id="meeshoShelfRow">
       <div class="shelf-card">
@@ -1114,7 +1116,7 @@
   <div class="shelf" id="myntra-picks">
     <div class="shelf-head">
       <h2>Myntra</h2>
-      <a href="#" class="see-all">All Myntra deals →</a>
+      <a href="myntra.html" class="see-all">All Myntra deals →</a>
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
@@ -1147,7 +1149,7 @@
   <div class="shelf" id="alibaba-picks">
     <div class="shelf-head">
       <h2>Alibaba <span class="shelf-note">(bulk &amp; wholesale)</span></h2>
-      <a href="#" class="see-all">All Alibaba deals →</a>
+      <a href="alibaba.html" class="see-all">All Alibaba deals →</a>
     </div>
     <div class="shelf-row">
       <div class="shelf-card">
@@ -1336,11 +1338,11 @@
       <div class="tlabel">We currently compare prices across</div>
     </div>
     <div class="platform-list">
-      <span>Amazon</span>
-      <span>Flipkart</span>
-      <span>Meesho</span>
-      <span>Ajio</span>
-      <span>Myntra</span>
+      <a href="amazon.html">Amazon</a>
+      <a href="flipkart.html">Flipkart</a>
+      <a href="meesho.html">Meesho</a>
+      <a href="ajio.html">Ajio</a>
+      <a href="myntra.html">Myntra</a>
     </div>
   </div>
 </section>
