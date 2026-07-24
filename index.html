@@ -28,11 +28,31 @@
   *{box-sizing:border-box; margin:0; padding:0;}
   html{scroll-behavior:smooth;}
   body{
-    background:var(--bg-page);
+    background:
+      radial-gradient(rgba(43,32,19,0.045) 1px, transparent 1.3px) 0 0/22px 22px,
+      var(--bg-page);
     color:var(--ink);
     font-family:'Inter', sans-serif;
     overflow-x:hidden;
     -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- wave divider (breaks up the stacked-rectangle rhythm) ---------- */
+  .wave-divider{
+    display:block; width:100%; height:44px;
+    margin-top:-44px;
+    position:relative; z-index:2;
+  }
+  .wave-divider path{fill:var(--bg-page);}
+  .wave-divider.tan path{fill:var(--ink-soft);}
+  .wave-divider.flip{transform:scaleY(-1);}
+  .wave-divider.into-next{margin-top:0; margin-bottom:-44px;}
+
+  /* ---------- hand-drawn underline for section headings ---------- */
+  .scribble-head{position:relative; display:inline-block;}
+  .scribble-head svg{
+    position:absolute; left:0; bottom:-9px; width:100%; height:10px;
+    overflow:visible;
   }
   a{color:inherit; text-decoration:none;}
   img,svg{display:block; max-width:100%;}
@@ -348,6 +368,56 @@
     color:var(--muted); font-style:normal; margin-left:8px;
   }
 
+  .deal-spotlight{
+    display:grid;
+    grid-template-columns:1fr 1.4fr;
+    gap:36px;
+    align-items:center;
+    background:var(--ink);
+    color:var(--paper);
+    border-radius:20px;
+    padding:34px 38px;
+    margin-bottom:28px;
+    position:relative;
+    overflow:hidden;
+  }
+  .deal-spotlight::before{
+    content:'';
+    position:absolute; inset:0;
+    background:radial-gradient(ellipse 500px 300px at 90% 10%, rgba(232,114,12,0.28), transparent 65%);
+    pointer-events:none;
+  }
+  .deal-spotlight-art{
+    position:relative; z-index:1;
+    width:100%; aspect-ratio:1/1; max-width:170px;
+    background:rgba(251,244,231,0.08);
+    border:1px solid rgba(251,244,231,0.14);
+    border-radius:16px;
+    display:flex; align-items:center; justify-content:center;
+    transform:rotate(-3deg);
+  }
+  .deal-spotlight-art svg{width:60%; height:60%;}
+  .deal-spotlight-copy{position:relative; z-index:1;}
+  .deal-spotlight .eyebrow{color:var(--saffron);}
+  .deal-spotlight h3{
+    font-family:'Fraunces', serif; font-weight:600; font-style:italic;
+    font-size:clamp(22px,2.6vw,30px); margin:10px 0 12px; color:var(--paper);
+  }
+  .deal-spotlight .deal-meta{
+    display:flex; align-items:baseline; gap:12px; margin-bottom:16px; flex-wrap:wrap;
+  }
+  .deal-spotlight .deal-meta .now{font-family:'Bebas Neue', sans-serif; font-size:30px; color:var(--saffron);}
+  .deal-spotlight .deal-meta .was{font-family:'Space Mono', monospace; font-size:14px; color:rgba(251,244,231,0.5); text-decoration:line-through;}
+  .deal-spotlight .deal-meta .off{
+    font-size:12px; font-weight:600; color:var(--banyan);
+    background:rgba(47,158,99,0.15); padding:4px 10px; border-radius:100px;
+  }
+  @media (max-width:860px){
+    .deal-spotlight{grid-template-columns:1fr; text-align:center;}
+    .deal-spotlight-art{margin:0 auto;}
+    .deal-spotlight .deal-meta{justify-content:center;}
+  }
+
   /* ---------- trending shelves (near hero) ---------- */
   .trending{padding:56px 0 10px;}
   .trending-grid{
@@ -470,7 +540,10 @@
     transition:border-color .25s ease, transform .3s cubic-bezier(.22,1,.36,1), box-shadow .3s ease;
     box-shadow:0 2px 0 rgba(43,32,19,0.03);
   }
-  .shelf-card:hover{
+  .shelf-row .shelf-card:nth-child(3n+1){transform:rotate(-0.6deg);}
+  .shelf-row .shelf-card:nth-child(3n+2){transform:rotate(0.5deg);}
+  .shelf-row .shelf-card:nth-child(3n){transform:rotate(-0.3deg);}
+  .shelf-row .shelf-card:hover{
     border-color:var(--saffron);
     transform:translateY(-6px);
     box-shadow:0 22px 34px -18px rgba(43,32,19,0.35);
@@ -801,6 +874,8 @@
   </div>
 </section>
 
+<svg class="wave-divider" viewBox="0 0 1440 44" preserveAspectRatio="none"><path d="M0 22 Q 180 0 360 22 T 720 22 T 1080 22 T 1440 22 V44 H0 Z"></path></svg>
+
 <!--
   Trending shelves — currently curated by hand (edit the cards below directly).
   Not wired to the database, so this adds zero extra load right now.
@@ -808,6 +883,23 @@
   for how to do it without hammering the DB on every pageview.
 -->
 <section class="trending wrap" data-reveal>
+
+  <div class="deal-spotlight">
+    <div class="deal-spotlight-art">
+      <svg viewBox="0 0 64 64" fill="none"><circle cx="32" cy="32" r="16" stroke="#FBF4E7" stroke-width="2.2"/><path d="M32 22v10l7 4" stroke="#FBF4E7" stroke-width="2.2" stroke-linecap="round"/></svg>
+    </div>
+    <div class="deal-spotlight-copy">
+      <div class="eyebrow">Deal of the day</div>
+      <h3>Robot Vacuum Cleaner, App Control — the single most-clicked deal on the site today</h3>
+      <div class="deal-meta">
+        <span class="now">₹8,999</span>
+        <span class="was">₹15,999</span>
+        <span class="off">44% off · verified vs 90-day avg</span>
+      </div>
+      <a href="#amazon-picks" class="banner-cta">Grab this deal</a>
+    </div>
+  </div>
+
   <div class="trending-grid">
 
     <div class="trend-panel">
@@ -911,7 +1003,7 @@
 
 <section class="platform-shelves wrap" id="platform-shelves">
   <div class="eyebrow" style="margin-bottom:14px;">Shop by store</div>
-  <h2 class="display" style="font-size:clamp(28px,3.6vw,42px); margin-bottom:50px;">Pick a marketplace,<br><em>we've already sorted it.</em></h2>
+  <h2 class="display" style="font-size:clamp(28px,3.6vw,42px); margin-bottom:50px;">Pick a marketplace,<br><span class="scribble-head"><em>we've already sorted it</em><svg viewBox="0 0 200 10" preserveAspectRatio="none"><path d="M2 6 Q 50 -2 100 6 T 198 6" stroke="var(--saffron)" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg></span>.</h2>
 
   <div class="shelf" id="amazon-picks">
     <div class="shelf-head">
@@ -1201,6 +1293,8 @@
   </div>
 
 </section>
+
+<svg class="wave-divider tan flip" viewBox="0 0 1440 44" preserveAspectRatio="none"><path d="M0 22 Q 180 0 360 22 T 720 22 T 1080 22 T 1440 22 V44 H0 Z"></path></svg>
 
 <section class="hunt" id="hunt">
   <div class="wrap">
